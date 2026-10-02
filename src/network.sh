@@ -92,16 +92,8 @@ network_tick() {
   cache_refresh_if_stale download "$(network_max_age)" network_refresh
 }
 
-main() {
-  local cmd="${1:-}"
-
-  if [[ "${cmd}" == "refresh" ]]; then
-    network_refresh
-    return 0
-  fi
-
-  network_tick
-
+network_render_metric() {
+  local cmd="${1}"
   case "${cmd}" in
     download) net_render_text "$(cache_get download)" ;;
     upload)   net_render_text "$(cache_get upload)" ;;
@@ -119,6 +111,74 @@ main() {
     online)   net_render_online "$(cache_get online)" ;;
     *)        return 0 ;;
   esac
+}
+
+network_is_labelled() {
+  case "${1}" in
+    download | upload | speed | vpn | vpn_name | ip | wifi | ssid | connections | ping | public_ip | online) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+network_nerd_label() {
+  case "${1}" in
+    download) printf '\xf3\xb0\x87\x9a' ;;
+    upload) printf '\xf3\xb0\x95\x92' ;;
+    speed) printf '\xf3\xb0\x93\xa2' ;;
+    vpn) printf '\xf3\xb0\x96\x82' ;;
+    vpn_name) printf '\xf3\xb0\x96\x82' ;;
+    ip) printf '\xf3\xb0\xa9\xa0' ;;
+    wifi) printf '\xf3\xb0\x96\xa9' ;;
+    ssid) printf '\xf3\xb0\x96\xa9' ;;
+    connections) printf '\xf3\xb0\x8c\x98' ;;
+    ping) printf '\xf3\xb0\x80\x83' ;;
+    public_ip) printf '\xf3\xb0\x87\xa7' ;;
+    online) printf '\xf3\xb0\x96\x9f' ;;
+    *) printf '' ;;
+  esac
+}
+
+network_option_exists() {
+  [[ -n "$(tmux show-option -gq "${1}" 2>/dev/null)" ]]
+}
+
+network_label() {
+  local option="@net_revamped_${1}_label"
+  if network_option_exists "${option}"; then
+    tmux show-option -gqv "${option}" 2>/dev/null
+  elif [[ "$(get_tmux_option "@net_revamped_icons" "ascii")" == "nerd" ]]; then
+    network_nerd_label "${1}"
+  fi
+}
+
+network_labelled() {
+  local metric="${1}" value="${2}" label
+  [[ -n "${value}" ]] || return 0
+  label="$(network_label "${metric}")"
+  if [[ -n "${label}" ]]; then
+    printf '%s %s\n' "${label}" "${value}"
+  else
+    printf '%s\n' "${value}"
+  fi
+}
+
+main() {
+  local cmd="${1:-}"
+
+  if [[ "${cmd}" == "refresh" ]]; then
+    network_refresh
+    return 0
+  fi
+
+  network_tick
+
+  local out
+  out="$(network_render_metric "${cmd}")"
+  if network_is_labelled "${cmd}"; then
+    network_labelled "${cmd}" "${out}"
+  elif [[ -n "${out}" ]]; then
+    printf '%s\n' "${out}"
+  fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

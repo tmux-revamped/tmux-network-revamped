@@ -77,6 +77,25 @@ Press `prefix + I` to install.
 | `@net_revamped_online_interval` | `30` | seconds between reachability probes, independent of the speed sample |
 | `@net_revamped_enable_logging` | `0` | set to `1` to log under `~/.tmux/network-revamped-logs` |
 
+## Labels
+
+Every value placeholder can carry a label, an icon or word printed before the value only when the value is not empty, so each figure on the bar says what it is. Set `@net_revamped_<metric>_label` for one metric, or `@net_revamped_icons` to `nerd` to label every metric from a Nerd Font set. A metric's own label wins over the set, and setting it to `''` removes the set's label for that metric. The default, `ascii`, adds no labels, so existing bars render unchanged.
+
+| Metric | `nerd` glyph |
+|--------|--------------|
+| `download` | U+F01DA |
+| `upload` | U+F0552 |
+| `speed` | U+F04E2 |
+| `vpn` | U+F0582 |
+| `vpn_name` | U+F0582 |
+| `ip` | U+F0A60 |
+| `wifi` | U+F05A9 |
+| `ssid` | U+F05A9 |
+| `connections` | U+F0318 |
+| `ping` | U+F0003 |
+| `public_ip` | U+F01E7 |
+| `online` | U+F059F |
+
 ## Theme color suggestions
 
 The defaults use the 16 ANSI color names, which the active terminal theme remaps, so the tiers match any theme out of the box. For exact hex values, copy one block below. Low traffic maps to green, medium to yellow, and high to red.

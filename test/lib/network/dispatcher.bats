@@ -225,3 +225,58 @@ teardown() {
   run main bg_color
   [ "$status" -eq 0 ]
 }
+
+@test "network.sh dispatcher - a metric renders without a label by default" {
+  run network_labelled download "42"
+
+  [[ "${output}" == "42" ]]
+}
+
+@test "network.sh dispatcher - the nerd icon set labels a metric" {
+  set_tmux_option "@net_revamped_icons" "nerd"
+
+  run network_labelled download "42"
+
+  [[ "${output}" == $'\xf3\xb0\x87\x9a'" 42" ]]
+}
+
+@test "network.sh dispatcher - a set label beats the icon set" {
+  set_tmux_option "@net_revamped_icons" "nerd"
+  set_tmux_option "@net_revamped_download_label" "X"
+
+  run network_labelled download "42"
+
+  [[ "${output}" == "X 42" ]]
+}
+
+@test "network.sh dispatcher - an empty label removes the icon set's label" {
+  set_tmux_option "@net_revamped_icons" "nerd"
+  network_option_exists() { [[ "${1}" == "@net_revamped_download_label" ]]; }
+
+  run network_labelled download "42"
+
+  [[ "${output}" == "42" ]]
+}
+
+@test "network.sh dispatcher - an empty value renders nothing even with a label" {
+  set_tmux_option "@net_revamped_icons" "nerd"
+
+  run network_labelled download ""
+
+  [ -z "${output}" ]
+}
+
+@test "network.sh dispatcher - only value metrics carry a label" {
+  run network_is_labelled fg_color
+
+  [ "${status}" -eq 1 ]
+}
+
+@test "network.sh dispatcher - main labels a rendered metric" {
+  set_tmux_option "@net_revamped_icons" "nerd"
+  network_render_metric() { echo "42"; }
+
+  run main download
+
+  [[ "${output}" == $'\xf3\xb0\x87\x9a'" 42" ]]
+}
