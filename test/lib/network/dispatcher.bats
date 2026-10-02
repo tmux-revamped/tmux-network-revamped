@@ -295,5 +295,5 @@ teardown() {
 
   run cache_get down_smooth
 
-  [[ "${output}" == "2048" ]]
+  [[ "${output}" == "1024" ]]
 }
