@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The rate divided by whole seconds between samples taken two to five seconds
+  apart, so a sample 2.9 seconds after the last one was divided by 2 and read
+  about 45 percent high. Samples are now timed in milliseconds from bash 5's
+  `EPOCHREALTIME`, falling back to whole seconds on older bash.
+
 ### Added
 
 - Metric labels. `@net_revamped_<metric>_label` prints an icon or word before a value

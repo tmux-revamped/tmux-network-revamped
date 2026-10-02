@@ -47,15 +47,15 @@ network_refresh() {
   read -r rx tx <<< "$(read_counters "${iface}")"
   [[ "${rx}" =~ ^[0-9]+$ ]] || return 0
 
-  now=$(date +%s)
+  now=$(net_now_ms)
   prev_rx=$(cache_get rx_raw)
   prev_tx=$(cache_get tx_raw)
-  prev_ts=$(cache_get sample_ts)
+  prev_ts=$(cache_get sample_ms)
 
   if [[ "${prev_ts}" =~ ^[0-9]+$ ]]; then
     dt=$(( now - prev_ts ))
-    down=$(net_rate_compute "${rx}" "${prev_rx}" "${dt}")
-    up=$(net_rate_compute "${tx}" "${prev_tx}" "${dt}")
+    down=$(net_rate_compute_ms "${rx}" "${prev_rx}" "${dt}")
+    up=$(net_rate_compute_ms "${tx}" "${prev_tx}" "${dt}")
   else
     down=0
     up=0
@@ -66,7 +66,7 @@ network_refresh() {
   cache_set total "$(( down + up ))"
   cache_set rx_raw "${rx}"
   cache_set tx_raw "${tx}"
-  cache_set sample_ts "${now}"
+  cache_set sample_ms "${now}"
 
   # Cheap local probes always run; network-calling probes are opt-in and each
   # keeps its own slower cadence so enabling one does not hammer it every tick.

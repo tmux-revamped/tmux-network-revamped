@@ -41,6 +41,23 @@ net_rate_compute() {
   echo $(( d / ${3} ))
 }
 
+net_rate_compute_ms() {
+  [[ "${1}" =~ ^[0-9]+$ && "${2}" =~ ^[0-9]+$ && "${3}" =~ ^[0-9]+$ ]] || { echo 0; return 0; }
+  (( ${3} <= 0 )) && { echo 0; return 0; }
+  local d=$(( ${1} - ${2} ))
+  (( d < 0 )) && d=0
+  echo $(( d * 1000 / ${3} ))
+}
+
+net_now_ms() {
+  local real="${EPOCHREALTIME:-}"
+  if [[ "${real}" =~ ^([0-9]+)[.,]([0-9]{3}) ]]; then
+    printf '%s%s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
+  else
+    printf '%s000\n' "$(date +%s)"
+  fi
+}
+
 # net_format_rate BYTES_PER_SEC -> human readable rate.
 net_format_rate() {
   [[ "${1}" =~ ^[0-9]+$ ]] || { echo "0B/s"; return 0; }
@@ -267,6 +284,8 @@ read_counters() {
 export -f net_counters_from_proc
 export -f net_counters_from_netstat
 export -f net_rate_compute
+export -f net_rate_compute_ms
+export -f net_now_ms
 export -f net_format_rate
 export -f _read_proc_net_dev
 export -f _read_netstat

@@ -303,3 +303,42 @@ teardown() {
   _read_iw_dev_link() { echo ""; }
   [[ -z "$(read_ssid)" ]]
 }
+
+@test "network lib - the millisecond rate keeps sub-second precision" {
+  run net_rate_compute_ms 3000 0 2900
+
+  [[ "${output}" == "1034" ]]
+}
+
+@test "network lib - the millisecond rate never goes negative" {
+  run net_rate_compute_ms 100 500 1000
+
+  [[ "${output}" == "0" ]]
+}
+
+@test "network lib - the millisecond rate is zero without elapsed time" {
+  run net_rate_compute_ms 500 100 0
+
+  [[ "${output}" == "0" ]]
+}
+
+@test "network lib - the millisecond rate rejects non-numbers" {
+  run net_rate_compute_ms x 100 1000
+
+  [[ "${output}" == "0" ]]
+}
+
+@test "network lib - now in milliseconds uses EPOCHREALTIME when present" {
+  EPOCHREALTIME="1790000000.123456" run net_now_ms
+
+  [[ "${output}" == "1790000000123" ]]
+}
+
+@test "network lib - now in milliseconds falls back to whole seconds" {
+  date() { echo "1790000000"; }
+  unset EPOCHREALTIME
+
+  run net_now_ms
+
+  [[ "${output}" == "1790000000000" ]]
+}
