@@ -49,6 +49,14 @@ net_rate_compute_ms() {
   echo $(( d * 1000 / ${3} ))
 }
 
+net_smooth() {
+  local current="${1}" previous="${2}" weight="${3}"
+  [[ "${current}" =~ ^[0-9]+$ ]] || { echo 0; return 0; }
+  [[ "${weight}" =~ ^[0-9]+$ ]] && (( weight > 0 && weight < 100 )) || { echo "${current}"; return 0; }
+  [[ "${previous}" =~ ^[0-9]+$ ]] || { echo "${current}"; return 0; }
+  echo $(( (previous * weight + current * (100 - weight)) / 100 ))
+}
+
 net_now_ms() {
   local real="${EPOCHREALTIME:-}"
   if [[ "${real}" =~ ^([0-9]+)[.,]([0-9]{3}) ]]; then
@@ -286,6 +294,7 @@ export -f net_counters_from_netstat
 export -f net_rate_compute
 export -f net_rate_compute_ms
 export -f net_now_ms
+export -f net_smooth
 export -f net_format_rate
 export -f _read_proc_net_dev
 export -f _read_netstat

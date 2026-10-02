@@ -60,6 +60,7 @@ Press `prefix + I` to install.
 | Option | Default | Meaning |
 |--------|---------|---------|
 | `@net_revamped_interface` | auto | the interface to measure; empty auto-detects the default route |
+| `@net_revamped_smoothing` | `0` | percent weight of the previous rate in an exponential moving average, from `1` to `99`; `0` shows each sample as measured, a higher value follows the trend rather than every burst |
 | `@net_revamped_interval` | `2` | seconds between samples, also the rate window |
 | `@net_revamped_speed_format` | `%s %s` | format for download and upload |
 | `@net_revamped_medium_thresh` | `100` | total kilobytes per second for the medium tier |

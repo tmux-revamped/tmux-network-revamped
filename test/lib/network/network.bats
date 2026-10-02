@@ -342,3 +342,33 @@ teardown() {
 
   [[ "${output}" == "1790000000000" ]]
 }
+
+@test "network lib - smoothing blends the new sample into the previous one" {
+  run net_smooth 1000 0 60
+
+  [[ "${output}" == "400" ]]
+}
+
+@test "network lib - smoothing off passes the sample through" {
+  run net_smooth 1000 500 0
+
+  [[ "${output}" == "1000" ]]
+}
+
+@test "network lib - smoothing starts from the first sample" {
+  run net_smooth 1000 "" 60
+
+  [[ "${output}" == "1000" ]]
+}
+
+@test "network lib - an out-of-range weight passes the sample through" {
+  run net_smooth 1000 500 100
+
+  [[ "${output}" == "1000" ]]
+}
+
+@test "network lib - a non-numeric sample smooths to zero" {
+  run net_smooth x 500 60
+
+  [[ "${output}" == "0" ]]
+}

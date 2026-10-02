@@ -61,6 +61,13 @@ network_refresh() {
     up=0
   fi
 
+  local weight
+  weight="$(get_tmux_option "@net_revamped_smoothing" "0")"
+  down=$(net_smooth "${down}" "$(cache_get down_smooth)" "${weight}")
+  up=$(net_smooth "${up}" "$(cache_get up_smooth)" "${weight}")
+  cache_set down_smooth "${down}"
+  cache_set up_smooth "${up}"
+
   cache_set download "$(net_format_rate "${down}")"
   cache_set upload "$(net_format_rate "${up}")"
   cache_set total "$(( down + up ))"

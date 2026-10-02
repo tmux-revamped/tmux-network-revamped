@@ -282,3 +282,18 @@ teardown() {
 
   [[ "${output}" == $'\xf3\xb0\x87\x9a'" 42" ]]
 }
+
+@test "network.sh dispatcher - smoothing keeps a burst from jumping the rate" {
+  unset EPOCHREALTIME
+  set_tmux_option "@net_revamped_smoothing" "50"
+  export MOCK_EPOCH=1000
+  network_refresh
+  NET_RX=5096
+  NET_TX=2000
+  export MOCK_EPOCH=1002
+  network_refresh
+
+  run cache_get down_smooth
+
+  [[ "${output}" == "2048" ]]
+}
