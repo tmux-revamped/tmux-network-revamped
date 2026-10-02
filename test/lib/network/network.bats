@@ -410,6 +410,7 @@ teardown() {
 }
 
 @test "network lib - a comma-decimal locale still prints a dot" {
+  locale -a 2>/dev/null | grep -qiE '^pt_BR\.utf-?8$' || skip "the pt_BR.UTF-8 locale is not installed"
   LC_ALL=pt_BR.UTF-8 LC_NUMERIC=pt_BR.UTF-8 run net_format_rate 2048 1
 
   [[ "${output}" == "2.0KB/s" ]]
