@@ -372,3 +372,45 @@ teardown() {
 
   [[ "${output}" == "0" ]]
 }
+
+@test "network lib - precision zero shows whole numbers" {
+  run net_format_rate 8396 0
+
+  [[ "${output}" == "8KB/s" ]]
+}
+
+@test "network lib - a rate that rounds to 1000 moves up a unit" {
+  run net_format_rate 1023500 0
+
+  [[ "${output}" == "1MB/s" ]]
+}
+
+@test "network lib - bytes that round to 1000 move up to kilobytes" {
+  run net_format_rate 1000 0
+
+  [[ "${output}" == "1KB/s" ]]
+}
+
+@test "network lib - precision zero rounds to the nearest whole number" {
+  run net_format_rate 2867 0
+
+  [[ "${output}" == "3KB/s" ]]
+}
+
+@test "network lib - gigabytes are reached" {
+  run net_format_rate 2147483648 0
+
+  [[ "${output}" == "2GB/s" ]]
+}
+
+@test "network lib - an invalid precision falls back to one decimal" {
+  run net_format_rate 2048 x
+
+  [[ "${output}" == "2.0KB/s" ]]
+}
+
+@test "network lib - a comma-decimal locale still prints a dot" {
+  LC_ALL=pt_BR.UTF-8 LC_NUMERIC=pt_BR.UTF-8 run net_format_rate 2048 1
+
+  [[ "${output}" == "2.0KB/s" ]]
+}

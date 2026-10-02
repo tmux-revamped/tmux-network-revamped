@@ -60,6 +60,7 @@ Press `prefix + I` to install.
 | Option | Default | Meaning |
 |--------|---------|---------|
 | `@net_revamped_interface` | auto | the interface to measure; empty auto-detects the default route |
+| `@net_revamped_precision` | `1` | decimal places for the rates, from `0` to `9`; a rate that rounds to 1000 or more moves up a unit, so `0` shows `1MB/s` rather than `1000KB/s` |
 | `@net_revamped_smoothing` | `0` | percent weight of the previous rate in an exponential moving average, from `1` to `99`; `0` shows each sample as measured, a higher value follows the trend rather than every burst |
 | `@net_revamped_interval` | `2` | seconds between samples, also the rate window |
 | `@net_revamped_speed_format` | `%s %s` | format for download and upload |

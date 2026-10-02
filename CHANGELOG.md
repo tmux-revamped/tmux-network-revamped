@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `@net_revamped_precision`, the decimal places for the rates. A rate that
+  rounds to 1000 or more moves up a unit, through GB/s.
 - `@net_revamped_smoothing`, an exponential moving average over the rates, so
   bursty traffic reads as a trend instead of jumping every sample. Off by
   default.
@@ -18,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A comma-decimal locale printed rates as `2,0KB/s`. The formatter now runs
+  under the C locale.
 - The rate divided by whole seconds between samples taken two to five seconds
   apart, so a sample 2.9 seconds after the last one was divided by 2 and read
   about 45 percent high. Samples are now timed in milliseconds from bash 5's

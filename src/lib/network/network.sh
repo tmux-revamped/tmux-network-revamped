@@ -66,13 +66,21 @@ net_now_ms() {
   fi
 }
 
-# net_format_rate BYTES_PER_SEC -> human readable rate.
+# net_format_rate BYTES_PER_SEC [PRECISION] -> human readable rate.
 net_format_rate() {
+  local precision="${2:-1}"
+  [[ "${precision}" =~ ^[0-9]$ ]] || precision=1
   [[ "${1}" =~ ^[0-9]+$ ]] || { echo "0B/s"; return 0; }
-  awk -v b="${1}" 'BEGIN {
-    if (b >= 1048576) printf "%.1fMB/s", b / 1048576;
-    else if (b >= 1024) printf "%.1fKB/s", b / 1024;
-    else printf "%dB/s", b;
+  LC_ALL=C awk -v b="${1}" -v p="${precision}" 'BEGIN {
+    split("B KB MB GB TB", unit, " ");
+    v = b; u = 1;
+    while (u < 5) {
+      r = (u == 1) ? int(v + 0.5) : sprintf("%." p "f", v) + 0;
+      if (r < 1000) break;
+      v = v / 1024; u++;
+    }
+    if (u == 1) printf "%dB/s", int(v + 0.5);
+    else printf "%." p "f%s/s", v, unit[u];
   }'
 }
 

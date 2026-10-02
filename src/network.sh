@@ -68,8 +68,10 @@ network_refresh() {
   cache_set down_smooth "${down}"
   cache_set up_smooth "${up}"
 
-  cache_set download "$(net_format_rate "${down}")"
-  cache_set upload "$(net_format_rate "${up}")"
+  local precision
+  precision="$(get_tmux_option "@net_revamped_precision" "1")"
+  cache_set download "$(net_format_rate "${down}" "${precision}")"
+  cache_set upload "$(net_format_rate "${up}" "${precision}")"
   cache_set total "$(( down + up ))"
   cache_set rx_raw "${rx}"
   cache_set tx_raw "${tx}"
