@@ -49,14 +49,16 @@ teardown() {
 }
 
 @test "network.sh dispatcher - first sample reports zero and stores counters" {
+  unset EPOCHREALTIME
   export MOCK_EPOCH=1000
   network_refresh
   [[ "$(cache_get download)" == "0B/s" ]]
   [[ "$(cache_get rx_raw)" == "1000" ]]
-  [[ "$(cache_get sample_ts)" == "1000" ]]
+  [[ "$(cache_get sample_ms)" == "1000000" ]]
 }
 
 @test "network.sh dispatcher - second sample computes the rate" {
+  unset EPOCHREALTIME
   export MOCK_EPOCH=1000
   network_refresh
   NET_RX=3048
