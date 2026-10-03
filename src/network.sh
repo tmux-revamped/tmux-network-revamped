@@ -81,14 +81,12 @@ network_refresh() {
   cache_set tx_raw "${tx}"
   cache_set sample_ms "${now}"
 
-  # Cheap local probes always run; network-calling probes are opt-in and each
-  # keeps its own slower cadence so enabling one does not hammer it every tick.
-  cache_set vpn "$(read_vpn)"
-  cache_set connections "$(read_connections)"
-  cache_set wifi "$(read_wifi)"
-  cache_set ssid "$(read_ssid)"
-  cache_set ip "$(read_lan_ip)"
-  cache_set vpn_name "$(read_vpn_name)"
+  cache_set_if_stale vpn "$(net_probe_max_age vpn 30)" read_vpn
+  cache_set_if_stale connections "$(net_probe_max_age connections 30)" read_connections
+  cache_set_if_stale wifi "$(net_probe_max_age wifi 30)" read_wifi
+  cache_set_if_stale ssid "$(net_probe_max_age ssid 30)" read_ssid
+  cache_set_if_stale ip "$(net_probe_max_age ip 30)" read_lan_ip
+  cache_set_if_stale vpn_name "$(net_probe_max_age vpn_name 30)" read_vpn_name
   if [[ "$(get_tmux_option "@net_revamped_ping_enabled" "0")" == "1" ]]; then
     cache_set_if_stale ping "$(net_probe_max_age ping 15)" read_ping
   fi
@@ -219,7 +217,7 @@ network_publish() {
 _network_reexec() { exec "${PLUGIN_DIR}/src/network.sh" daemon; }
 
 network_daemon() {
-  if ticker_run net_revamped network_publish "$$"; then
+  if ticker_run net_revamped network_publish "$$" 2; then
     _network_reexec
   fi
 }

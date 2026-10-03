@@ -390,3 +390,23 @@ teardown() {
 
   [[ "$(cat "${TEST_TMPDIR}/spawn")" == *"/src/network.sh" ]]
 }
+
+@test "network.sh dispatcher - secondary probes keep their cache inside their interval" {
+  network_refresh
+  read_wifi() { echo "probed" > "${TEST_TMPDIR}/probed"; echo "-40"; }
+
+  network_refresh
+
+  [ ! -f "${TEST_TMPDIR}/probed" ]
+  [[ "$(cache_get wifi)" == "-55" ]]
+}
+
+@test "network.sh dispatcher - secondary probes run again once their interval passes" {
+  network_refresh
+  read_wifi() { echo "-40"; }
+  export MOCK_EPOCH=$(( MOCK_EPOCH + 31 ))
+
+  network_refresh
+
+  [[ "$(cache_get wifi)" == "-40" ]]
+}

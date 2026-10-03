@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `@net_revamped_render 'options'` replaces the `#()` calls with tmux option
   reads, written by one background process per server every
-  `status-interval` seconds. tmux reruns a `#()` call on every redraw, so a
+  `@net_revamped_interval` seconds, 2 by default. tmux reruns a `#()` call on every redraw, so a
   shared bar ran each one about once a second and painted values one by one.
 - `@net_revamped_fixed_width 'on'` pads each value to its widest form, and
   `@net_revamped_<metric>_width` sets one metric's width, so a value changing
@@ -25,8 +25,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only when the value is not empty, and `@net_revamped_icons` set to `nerd` labels
   every metric from a Nerd Font set. The default adds no labels.
 
+### Changed
+
+- The options-mode background process reads every option it needs in one tmux
+  call per tick, sends its cache writes and published values in a second, and
+  keeps its functions out of the environment of the commands it runs. Options
+  mode ticks every `@net_revamped_interval` seconds.
+
 ### Fixed
 
+- The Wi-Fi, SSID, LAN IP, VPN and connection probes refreshed on every
+  sample, and the Wi-Fi and SSID probes run `system_profiler`, about 0.16 s of
+  CPU each. They now refresh every 30 seconds, set per probe with
+  `@net_revamped_<probe>_interval`.
 - A comma-decimal locale printed rates as `2,0KB/s`. The formatter now runs
   under the C locale.
 - The rate divided by whole seconds between samples taken two to five seconds
