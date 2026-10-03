@@ -56,3 +56,12 @@ teardown() {
 
   [[ "$(cat "$(_mock_opt_file @net_revamped_published)")" == "download" ]]
 }
+
+@test "entry - a second run keeps metrics already turned into option reads" {
+  tmux set-option -gq "@net_revamped_render" "options"
+  tmux set-option -gq "status-right" "[#{E:@net_revamped_out_download}]"
+
+  bash "${ENTRY}"
+
+  [[ "$(cat "$(_mock_opt_file @net_revamped_published)")" == "download" ]]
+}

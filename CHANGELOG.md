@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- In options mode, running the entry point a second time, as two overlapping
+  config reloads do, found no placeholders left in the status line and
+  published nothing, which froze every value. A metric whose option read is
+  already on the status line now counts as used.
 - The Wi-Fi, SSID, LAN IP, VPN and connection probes refreshed on every
   sample, and the Wi-Fi and SSID probes run `system_profiler`, about 0.16 s of
   CPU each. They now refresh every 30 seconds, set per probe with
