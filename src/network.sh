@@ -19,6 +19,10 @@ source "${PLUGIN_DIR}/src/lib/tmux/tmux-ops.sh"
 # shellcheck source=/dev/null
 source "${PLUGIN_DIR}/src/lib/utils/cache.sh"
 # shellcheck source=/dev/null
+source "${PLUGIN_DIR}/src/lib/utils/publish.sh"
+# shellcheck source=/dev/null
+source "${PLUGIN_DIR}/src/lib/utils/ticker.sh"
+# shellcheck source=/dev/null
 source "${PLUGIN_DIR}/src/lib/network/network.sh"
 # shellcheck source=/dev/null
 source "${PLUGIN_DIR}/src/lib/network/render.sh"
@@ -160,9 +164,31 @@ network_label() {
   fi
 }
 
+network_natural_width() {
+  local precision
+  case "${1}" in
+    download | upload)
+      precision="$(get_tmux_option "@net_revamped_precision" "1")"
+      [[ "${precision}" =~ ^[0-9]+$ ]] || precision=1
+      if (( precision > 0 )); then
+        printf '%s' "$(( 8 + precision ))"
+      else
+        printf '7'
+      fi
+      ;;
+    ping) printf '5' ;;
+    *) printf '0' ;;
+  esac
+}
+
+network_padded() {
+  publish_pad "${2}" "$(publish_width net_revamped "${1}" "$(network_natural_width "${1}")")"
+}
+
 network_labelled() {
   local metric="${1}" value="${2}" label
   [[ -n "${value}" ]] || return 0
+  value="$(network_padded "${metric}" "${value}")"
   label="$(network_label "${metric}")"
   if [[ -n "${label}" ]]; then
     printf '%s %s\n' "${label}" "${value}"
@@ -171,23 +197,44 @@ network_labelled() {
   fi
 }
 
-main() {
-  local cmd="${1:-}"
-
-  if [[ "${cmd}" == "refresh" ]]; then
-    network_refresh
-    return 0
-  fi
-
-  network_tick
-
-  local out
-  out="$(network_render_metric "${cmd}")"
-  if network_is_labelled "${cmd}"; then
-    network_labelled "${cmd}" "${out}"
+network_output() {
+  local metric="${1}" out
+  out="$(network_render_metric "${metric}")"
+  if network_is_labelled "${metric}"; then
+    network_labelled "${metric}" "${out}"
   elif [[ -n "${out}" ]]; then
     printf '%s\n' "${out}"
   fi
+}
+
+network_publish() {
+  local metric
+  network_refresh
+  for metric in $(get_tmux_option "@net_revamped_published" ""); do
+    publish_add "@net_revamped_out_${metric}" "$(network_output "${metric}")"
+  done
+  publish_commit
+}
+
+_network_reexec() { exec "${PLUGIN_DIR}/src/network.sh" daemon; }
+
+network_daemon() {
+  if ticker_run net_revamped network_publish "$$"; then
+    _network_reexec
+  fi
+}
+
+main() {
+  local cmd="${1:-}"
+
+  case "${cmd}" in
+    refresh) network_refresh; return 0 ;;
+    start)   ticker_start "${PLUGIN_DIR}/src/network.sh"; return 0 ;;
+    daemon)  network_daemon; return 0 ;;
+  esac
+
+  network_tick
+  network_output "${cmd}"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

@@ -297,3 +297,96 @@ teardown() {
 
   [[ "${output}" == "1024" ]]
 }
+
+@test "network.sh dispatcher - a width option pads the value on the left" {
+  set_tmux_option "@net_revamped_download_width" "8"
+
+  run network_labelled download "5KB/s"
+
+  [[ "${output}" == "   5KB/s" ]]
+}
+
+@test "network.sh dispatcher - a value wider than the width is not cut" {
+  set_tmux_option "@net_revamped_download_width" "2"
+
+  run network_labelled download "5KB/s"
+
+  [[ "${output}" == "5KB/s" ]]
+}
+
+@test "network.sh dispatcher - a non-numeric width adds no padding" {
+  set_tmux_option "@net_revamped_download_width" "wide"
+
+  run network_labelled download "5KB/s"
+
+  [[ "${output}" == "5KB/s" ]]
+}
+
+@test "network.sh dispatcher - the padding sits between the label and the value" {
+  set_tmux_option "@net_revamped_download_label" "X"
+  set_tmux_option "@net_revamped_download_width" "8"
+
+  run network_labelled download "5KB/s"
+
+  [[ "${output}" == "X    5KB/s" ]]
+}
+
+@test "network dispatcher - fixed width pads a value to its widest form" {
+  set_tmux_option "@net_revamped_fixed_width" "on"
+
+  run network_labelled download "5.0KB/s"
+
+  [[ "${output}" == "  5.0KB/s" ]]
+}
+
+@test "network dispatcher - natural widths cover the padded metrics" {
+  run bash -c 'source "$1"; for m in download upload ping ip; do printf "%s=%s " "$m" "$(network_natural_width "$m")"; done' _ "${BATS_TEST_DIRNAME}/../../../src/network.sh"
+
+  [[ "${output}" == "download=9 upload=9 ping=5 ip=0 " ]]
+}
+
+@test "network dispatcher - publish writes every published metric in one batch" {
+  export PUBLISH_LOG="${TEST_TMPDIR}/publish.log"
+  _publish_tmux() { [[ "${1}" == "list-clients" ]] && return 0; printf '%s\n' "$@" > "${PUBLISH_LOG}"; }
+  network_refresh() { return 0; }
+  network_output() { printf 'v-%s' "${1}"; }
+  set_tmux_option "@net_revamped_published" "alpha beta"
+
+  network_publish
+
+  [[ "$(paste -sd'|' "${PUBLISH_LOG}")" == "set-option|-gq|@net_revamped_out_alpha|v-alpha|;|set-option|-gq|@net_revamped_out_beta|v-beta" ]]
+}
+
+@test "network dispatcher - the daemon re-executes after the tick limit" {
+  ticker_run() { return 0; }
+  _network_reexec() { echo "reexec" > "${TEST_TMPDIR}/reexec"; }
+
+  network_daemon
+
+  [[ "$(cat "${TEST_TMPDIR}/reexec")" == "reexec" ]]
+}
+
+@test "network dispatcher - the daemon stops when it loses ownership" {
+  ticker_run() { return 1; }
+  _network_reexec() { echo "reexec" > "${TEST_TMPDIR}/reexec"; }
+
+  network_daemon
+
+  [ ! -f "${TEST_TMPDIR}/reexec" ]
+}
+
+@test "network dispatcher - main daemon runs the ticker" {
+  network_daemon() { echo "daemon" > "${TEST_TMPDIR}/daemon"; }
+
+  main daemon
+
+  [[ "$(cat "${TEST_TMPDIR}/daemon")" == "daemon" ]]
+}
+
+@test "network dispatcher - main start spawns the daemon" {
+  _ticker_spawn() { printf '%s' "${1}" > "${TEST_TMPDIR}/spawn"; }
+
+  main start
+
+  [[ "$(cat "${TEST_TMPDIR}/spawn")" == *"/src/network.sh" ]]
+}

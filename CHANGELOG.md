@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `@net_revamped_render 'options'` replaces the `#()` calls with tmux option
+  reads, written by one background process per server every
+  `status-interval` seconds. tmux reruns a `#()` call on every redraw, so a
+  shared bar ran each one about once a second and painted values one by one.
+- `@net_revamped_fixed_width 'on'` pads each value to its widest form, and
+  `@net_revamped_<metric>_width` sets one metric's width, so a value changing
+  length no longer shifts the rest of the status line.
 - `@net_revamped_precision`, the decimal places for the rates. A rate that
   rounds to 1000 or more moves up a unit, through GB/s.
 - `@net_revamped_smoothing`, an exponential moving average over the rates, so
