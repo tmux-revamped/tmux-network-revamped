@@ -5,6 +5,8 @@
 # Replaces the #{net_*} placeholders in status-left and status-right with calls
 # to the dispatcher, which reads cached values and never blocks the render.
 
+shopt -u patsub_replacement 2>/dev/null || true
+
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NET_CMD="${PLUGIN_DIR}/src/network.sh"
 

@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- On bash 5.2 and later, a plugin path containing `&` was rewritten while
+  placeholders were replaced, because `&` in a replacement stands for the
+  matched text. The entry point now turns that behaviour off.
 - `#{net_online}` showed `off` when the reachability probe was disabled, which
   read as an outage. It is now empty until `@net_revamped_online_enabled` is
   `1`.

@@ -65,3 +65,17 @@ teardown() {
 
   [[ "$(cat "$(_mock_opt_file @net_revamped_published)")" == "download" ]]
 }
+
+@test "entry - a plugin path containing an ampersand stays literal" {
+  # Arrange
+  local dir="${TEST_TMPDIR}/a&b"
+  mkdir -p "${dir}/src"
+  cp -f "${ENTRY}" "${dir}/network-revamped.tmux"
+  tmux set-option -gq "status-right" "[#{net_download}]"
+
+  # Act
+  bash "${dir}/network-revamped.tmux"
+
+  # Assert
+  [[ "$(cat "$(_mock_opt_file status-right)")" == "[#(${dir}/src/network.sh download)]" ]]
+}
