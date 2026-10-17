@@ -137,7 +137,7 @@ teardown() {
 @test "cache.sh - _cache_spawn runs the worker in the background" {
   unset CACHE_SYNC
   local marker="${TEST_TMPDIR}/ran"
-  _worker() { echo done > "$1"; }
+  _worker() { echo "done" > "$1"; }
   _cache_spawn percent _worker "${marker}"
   local i
   for (( i=0; i<50; i++ )); do
