@@ -452,3 +452,14 @@ teardown() {
   # Assert
   [[ "${output}" == '10.0.0.5##' ]]
 }
+
+@test "network lib - netstat counters read bytes on an interface without an address" {
+  # Arrange
+  local txt=$'Name Mtu Network Address Ipkts Ierrs Ibytes Opkts Oerrs Obytes Coll\nutun0 1500 <Link#18> 7 0 4096 9 0 8192 0'
+
+  # Act
+  run net_counters_from_netstat "${txt}" utun0
+
+  # Assert
+  [[ "${output}" == "4096 8192" ]]
+}

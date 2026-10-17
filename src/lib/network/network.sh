@@ -31,7 +31,7 @@ net_counters_from_proc() {
 
 # net_counters_from_netstat TEXT IFACE -> "<rx> <tx>" from `netstat -ib`.
 net_counters_from_netstat() {
-  printf '%s\n' "${1}" | awk -v i="${2}" '$1 == i && $7 ~ /^[0-9]+$/ { print $7" "$10; exit }'
+  printf '%s\n' "${1}" | awk -v i="${2}" '$1 == i && NF >= 10 && $(NF-4) ~ /^[0-9]+$/ && $(NF-1) ~ /^[0-9]+$/ { print $(NF-4)" "$(NF-1); exit }'
 }
 
 # net_rate_compute CURRENT PREVIOUS SECONDS -> bytes per second, never negative.

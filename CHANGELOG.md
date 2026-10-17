@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- On macOS, an interface without a hardware address, such as a `utun` VPN
+  tunnel, has one column fewer in `netstat -ib`, so packet counts were read as
+  byte counts. The byte columns are now counted from the end of the row.
 - When the default route disappeared, the worker stopped before the
   reachability probe, so `#{net_online}` kept showing `on` and the rates froze
   at their last value. The probes now always run, and unreadable counters
