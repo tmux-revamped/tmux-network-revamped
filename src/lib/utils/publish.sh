@@ -18,7 +18,9 @@ publish_escape() {
 }
 
 publish_chars() {
-  printf '%s' "${1}" | LC_ALL=C tr -d '\200-\277' | wc -c | tr -d ' '
+  local LC_ALL=C
+  local value="${1//[$'\200'-$'\277']/}"
+  printf '%s' "${#value}"
 }
 
 publish_pad() {

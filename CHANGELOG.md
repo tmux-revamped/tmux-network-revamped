@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- A metric label is read through the option snapshot, and whether a label is
+  set to empty is checked once per background process instead of with a tmux
+  call on every tick. Padding counts characters in the shell instead of a
+  three-process pipeline per value.
 - The options-mode background process reads every option it needs in one tmux
   call per tick, sends its cache writes and published values in a second, and
   keeps its functions out of the environment of the commands it runs. Options

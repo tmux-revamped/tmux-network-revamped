@@ -433,3 +433,33 @@ teardown() {
 
   [[ "$(cache_get wifi)" == "-40" ]]
 }
+
+@test "network dispatcher - the daemon checks a label option once, not every tick" {
+  # Arrange
+  export PROBE_LOG="${TEST_TMPDIR}/probe.log"
+  _publish_tmux() { return 0; }
+  network_refresh() { return 0; }
+  network_render_metric() { echo "42"; }
+  network_option_exists() { printf '%s\n' "${1}" >> "${PROBE_LOG}"; return 1; }
+  set_tmux_option "@net_revamped_icons" "nerd"
+  set_tmux_option "@net_revamped_published" "download"
+
+  # Act
+  network_publish
+  network_publish
+
+  # Assert
+  [[ "$(wc -l < "${PROBE_LOG}" | tr -d ' ')" == "1" ]]
+}
+
+@test "network dispatcher - a label is read through the option helper" {
+  # Arrange
+  get_tmux_option() { [[ "${1}" == "@net_revamped_download_label" ]] && { printf 'SNAP'; return 0; }; printf '%s' "${2:-}"; }
+  tmux() { printf 'LIVE'; }
+
+  # Act
+  run network_label download
+
+  # Assert
+  [[ "${output}" == "SNAP" ]]
+}

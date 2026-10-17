@@ -169,17 +169,33 @@ network_nerd_label() {
   esac
 }
 
+NETWORK_LABEL_CHECKED=" "
+NETWORK_LABEL_SET=" "
+
 network_option_exists() {
   [[ -n "$(tmux show-option -gq "${1}" 2>/dev/null)" ]]
 }
 
-network_label() {
-  local option="@net_revamped_${1}_label"
-  if network_option_exists "${option}"; then
-    tmux show-option -gqv "${option}" 2>/dev/null
-  elif [[ "$(get_tmux_option "@net_revamped_icons" "ascii")" == "nerd" ]]; then
-    network_nerd_label "${1}"
+network_label_is_set() {
+  local metric="${1}"
+  if [[ "${NETWORK_LABEL_CHECKED}" != *" ${metric} "* ]]; then
+    NETWORK_LABEL_CHECKED="${NETWORK_LABEL_CHECKED}${metric} "
+    if network_option_exists "@net_revamped_${metric}_label"; then
+      NETWORK_LABEL_SET="${NETWORK_LABEL_SET}${metric} "
+    fi
   fi
+  [[ "${NETWORK_LABEL_SET}" == *" ${metric} "* ]]
+}
+
+network_label() {
+  local metric="${1}" value
+  value="$(get_tmux_option "@net_revamped_${metric}_label" "")"
+  if [[ -n "${value}" ]]; then
+    printf '%s' "${value}"
+    return 0
+  fi
+  [[ "$(get_tmux_option "@net_revamped_icons" "ascii")" == "nerd" ]] || return 0
+  network_label_is_set "${metric}" || network_nerd_label "${metric}"
 }
 
 network_natural_width() {
@@ -226,9 +242,15 @@ network_output() {
 }
 
 network_publish() {
-  local metric
+  local metric published
   network_refresh
-  for metric in $(get_tmux_option "@net_revamped_published" ""); do
+  published="$(get_tmux_option "@net_revamped_published" "")"
+  if [[ "$(get_tmux_option "@net_revamped_icons" "ascii")" == "nerd" ]]; then
+    for metric in ${published}; do
+      network_label_is_set "${metric}" || true
+    done
+  fi
+  for metric in ${published}; do
     publish_add "@net_revamped_out_${metric}" "$(network_output "${metric}")"
   done
   publish_commit

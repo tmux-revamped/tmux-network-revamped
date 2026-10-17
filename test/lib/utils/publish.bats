@@ -188,3 +188,17 @@ logged_words() {
   # Assert
   [[ "${output}" == '##[fg=red]##(id)##' ]]
 }
+
+@test "publish - chars counts in the shell without spawning a pipeline" {
+  # Arrange
+  export TR_LOG="${TEST_TMPDIR}/tr.log"
+  tr() { printf 'tr\n' >> "${TR_LOG}"; }
+  wc() { printf 'wc\n' >> "${TR_LOG}"; }
+
+  # Act
+  run publish_chars "45°C"
+
+  # Assert
+  [[ "${output}" == "4" ]] || false
+  [ ! -f "${TR_LOG}" ]
+}
