@@ -8,9 +8,9 @@
 
 </div>
 
-**12** placeholders · **2** platforms · **143** tests · **95%+** coverage
+**14** placeholders · **2** platforms · **95%+** coverage
 
-Surfaces network throughput, VPN interface and name, LAN IP, established connections, ping latency, public IP, and wifi signal in your tmux status bar. A detached background worker reads interface byte counters and computes the rate; the status line reads the formatted result from a tmux server user-option and returns instantly. Previous counters live in tmux options too, so the delta needs no temp file.
+Surfaces network throughput, VPN interface and name, LAN IP, established connections, ping latency, public IP, wifi signal and network name, and internet reachability in your tmux status bar. A detached background worker reads interface byte counters and computes the rate; the status line reads the formatted result from a tmux server user-option and returns instantly. Previous counters live in tmux options too, so the delta needs no temp file.
 
 Built from [tmux-plugin-template](https://github.com/tmux-revamped/tmux-plugin-template).
 
@@ -21,7 +21,7 @@ Built from [tmux-plugin-template](https://github.com/tmux-revamped/tmux-plugin-t
 </tr>
 <tr>
 <td><strong>Cross-platform</strong><br/>macOS and Linux on both Intel and ARM with built-in tools, no extra package.</td>
-<td><strong>Tested</strong><br/>108 [bats](https://github.com/bats-core/bats-core) tests hold 95%+ coverage across every probe.</td>
+<td><strong>Tested</strong><br/>A [bats](https://github.com/bats-core/bats-core) suite holds 95%+ coverage across every probe.</td>
 </tr>
 </table>
 
@@ -112,7 +112,7 @@ set -g @net_revamped_fixed_width 'on'
 
 ## Theme color suggestions
 
-The defaults use the 16 ANSI color names, which the active terminal theme remaps, so the tiers match any theme out of the box. For exact hex values, copy one block below. Low traffic maps to green, medium to yellow, and high to red.
+The tier colors are empty by default, so `#{net_fg_color}` and `#{net_bg_color}` print nothing and the rate keeps the status line's own color until you set them. To color the tiers, copy one block below. Low traffic maps to green, medium to yellow, and high to red.
 
 ### Catppuccin Mocha
 
