@@ -72,7 +72,7 @@ net_render_wifi() {
 net_render_online() {
   if [[ "${1}" == "up" ]]; then
     get_tmux_option "@net_revamped_online_up_text" "on"
-  else
+  elif [[ "$(get_tmux_option "@net_revamped_online_enabled" "0")" == "1" ]]; then
     get_tmux_option "@net_revamped_online_down_text" "off"
   fi
 }

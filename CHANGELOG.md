@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `#{net_online}` showed `off` when the reachability probe was disabled, which
+  read as an outage. It is now empty until `@net_revamped_online_enabled` is
+  `1`.
 - On macOS, an interface without a hardware address, such as a `utun` VPN
   tunnel, has one column fewer in `netstat -ib`, so packet counts were read as
   byte counts. The byte columns are now counted from the end of the row.

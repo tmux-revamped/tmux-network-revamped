@@ -130,10 +130,22 @@ teardown() {
 }
 
 @test "render.sh - net_render_online maps state with default and custom labels" {
+  set_tmux_option "@net_revamped_online_enabled" "1"
   [[ "$(net_render_online up)" == "on" ]]
   [[ "$(net_render_online "")" == "off" ]]
   set_tmux_option "@net_revamped_online_up_text" "UP"
   set_tmux_option "@net_revamped_online_down_text" "DOWN"
   [[ "$(net_render_online up)" == "UP" ]]
   [[ "$(net_render_online down)" == "DOWN" ]]
+}
+
+@test "render.sh - net_render_online is empty while the probe is disabled" {
+  # Arrange
+  set_tmux_option "@net_revamped_online_enabled" "0"
+
+  # Act
+  run net_render_online ""
+
+  # Assert
+  [[ -z "${output}" ]]
 }
