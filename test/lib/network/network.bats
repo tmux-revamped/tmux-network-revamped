@@ -237,25 +237,120 @@ teardown() {
   [[ "$(read_vpn_name)" == "Work VPN" ]]
 }
 
-@test "network.sh - host-probe seams are callable" {
-  run _read_proc_net_dev
-  run _read_netstat
-  run _read_netstat_an
-  run _read_ping_linux
-  run _read_ping_macos
-  run _read_ip_links
-  run _read_route_table
-  run _read_proc_wireless
-  run _read_sp_airport
-  run _default_iface_linux
-  run _default_iface_macos
-  run _read_ifaddr_macos eth0
-  run _read_ip_addr_linux eth0
-  run _read_scutil_macos
-  run _read_nmcli_active_linux
-  run _read_iwgetid
-  run _read_iw_dev_link wlan0
-  true
+stub_probe_tools() {
+  cat() {
+    case "${1:-}" in
+      /proc/*) printf 'cat %s\n' "$*" ;;
+      *) command cat "$@" ;;
+    esac
+  }
+  netstat() { printf 'netstat %s\n' "$*"; }
+  ping() { printf 'ping %s\n' "$*"; }
+  ip() { printf 'ip %s\n' "$*"; }
+  system_profiler() { printf 'system_profiler %s\n' "$*"; }
+  ipconfig() { printf 'ipconfig %s\n' "$*"; }
+  scutil() { printf 'scutil %s\n' "$*"; }
+  nmcli() { printf 'nmcli %s\n' "$*"; }
+  iwgetid() { printf 'iwgetid %s\n' "$*"; }
+  iw() { printf 'iw %s\n' "$*"; }
+  curl() { printf 'curl %s\n' "$*"; }
+}
+
+@test "network.sh - counter and connection seams call their tools" {
+  # Arrange
+  stub_probe_tools
+
+  # Act
+  local proc netstat_ib netstat_an routes
+  proc="$(_read_proc_net_dev)"
+  netstat_ib="$(_read_netstat)"
+  netstat_an="$(_read_netstat_an)"
+  routes="$(_read_route_table)"
+
+  # Assert
+  [[ "${proc}" == "cat /proc/net/dev" ]] || false
+  [[ "${netstat_ib}" == "netstat -ib" ]] || false
+  [[ "${netstat_an}" == "netstat -an" ]] || false
+  [[ "${routes}" == "netstat -rn -f inet" ]]
+}
+
+@test "network.sh - ping seams send one probe per platform" {
+  # Arrange
+  stub_probe_tools
+
+  # Act
+  local linux macos
+  linux="$(_read_ping_linux)"
+  macos="$(_read_ping_macos)"
+
+  # Assert
+  [[ "${linux}" == "ping -c 1 -w 1 8.8.8.8" ]] || false
+  [[ "${macos}" == "ping -c 1 -t 1 8.8.8.8" ]]
+}
+
+@test "network.sh - link, wifi, and address seams call their tools" {
+  # Arrange
+  stub_probe_tools
+
+  # Act
+  local links wireless airport ifaddr ipaddr scutil_out nmcli_out iwgetid_out iw_out
+  links="$(_read_ip_links)"
+  wireless="$(_read_proc_wireless)"
+  airport="$(_read_sp_airport)"
+  ifaddr="$(_read_ifaddr_macos en0)"
+  ipaddr="$(_read_ip_addr_linux eth0)"
+  scutil_out="$(_read_scutil_macos)"
+  nmcli_out="$(_read_nmcli_active_linux)"
+  iwgetid_out="$(_read_iwgetid)"
+  iw_out="$(_read_iw_dev_link wlan0)"
+
+  # Assert
+  [[ "${links}" == "ip -o link show up" ]] || false
+  [[ "${wireless}" == "cat /proc/net/wireless" ]] || false
+  [[ "${airport}" == "system_profiler SPAirPortDataType" ]] || false
+  [[ "${ifaddr}" == "ipconfig getifaddr en0" ]] || false
+  [[ "${ipaddr}" == "ip addr show dev eth0" ]] || false
+  [[ "${scutil_out}" == "scutil --nc list" ]] || false
+  [[ "${nmcli_out}" == "nmcli -t -f NAME,TYPE connection show --active" ]] || false
+  [[ "${iwgetid_out}" == "iwgetid -r" ]] || false
+  [[ "${iw_out}" == "iw dev wlan0 link" ]]
+}
+
+@test "network.sh - default interface seams parse the route output" {
+  # Arrange
+  ip() { printf 'default via 10.0.0.1 dev eth9 proto dhcp metric 100\n'; }
+  route() { printf '   route to: default\n  interface: en7\n'; }
+
+  # Act
+  local linux macos
+  linux="$(_default_iface_linux)"
+  macos="$(_default_iface_macos)"
+
+  # Assert
+  [[ "${linux}" == "eth9" ]] || false
+  [[ "${macos}" == "en7" ]]
+}
+
+@test "network.sh - the curl status seam reports the exit code" {
+  # Arrange
+  curl() { return 7; }
+
+  # Act
+  run _read_curl_status
+
+  # Assert
+  [[ "${output}" == "7" ]]
+}
+
+@test "network.sh - the public ip seam fetches with a timeout" {
+  # Arrange
+  stub_probe_tools
+
+  # Act
+  run _read_public_ip
+
+  # Assert
+  [[ "${output}" == "curl -sf --connect-timeout 2 -m 3 https://icanhazip.com" ]]
 }
 
 @test "network.sh - ssid_from_sp_macos reads the current network block" {
