@@ -13,6 +13,8 @@ _NETWORK_REVAMPED_NETWORK_LOADED=1
 _NET_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "${_NET_LIB_DIR}/../utils/platform.sh"
+# shellcheck source=/dev/null
+source "${_NET_LIB_DIR}/../utils/publish.sh"
 
 # net_counters_from_proc TEXT IFACE -> "<rx> <tx>" from /proc/net/dev.
 net_counters_from_proc() {
@@ -200,6 +202,10 @@ read_wifi() {
 # `iwgetid -r` output and falls back to parsing `iw dev link`. Each probe is
 # feature-detected: a missing tool makes its seam return empty.
 read_ssid() {
+  publish_escape "$(_read_ssid_raw)"
+}
+
+_read_ssid_raw() {
   if is_macos; then
     ssid_from_sp_macos "$(_read_sp_airport)"
   elif is_linux; then
@@ -244,6 +250,10 @@ read_online() {
 
 # read_vpn -> the active VPN interface name, empty when none.
 read_vpn() {
+  publish_escape "$(_read_vpn_raw)"
+}
+
+_read_vpn_raw() {
   if is_macos; then
     vpn_from_routes_macos "$(_read_route_table)"
   elif is_linux; then
@@ -253,6 +263,10 @@ read_vpn() {
 
 # read_lan_ip -> the LAN IPv4 of the default interface, empty when none.
 read_lan_ip() {
+  publish_escape "$(_read_lan_ip_raw)"
+}
+
+_read_lan_ip_raw() {
   local iface
   iface=$(default_iface)
   [[ -n "${iface}" ]] || { echo ""; return 0; }
@@ -265,6 +279,10 @@ read_lan_ip() {
 
 # read_vpn_name -> the human VPN connection name, empty when none.
 read_vpn_name() {
+  publish_escape "$(_read_vpn_name_raw)"
+}
+
+_read_vpn_name_raw() {
   if is_macos; then
     vpn_name_from_scutil "$(_read_scutil_macos)"
   elif is_linux; then
@@ -346,5 +364,9 @@ export -f read_online
 export -f read_vpn
 export -f read_lan_ip
 export -f read_vpn_name
+export -f _read_vpn_name_raw
+export -f _read_vpn_raw
+export -f _read_lan_ip_raw
+export -f _read_ssid_raw
 export -f read_wifi
 export -f read_ssid

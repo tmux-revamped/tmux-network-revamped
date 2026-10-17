@@ -177,3 +177,14 @@ logged_words() {
 
   [[ "$(logged_words)" == "set-option|-gq|@a|100%" ]]
 }
+
+@test "publish - escape doubles every hash so tmux prints it literally" {
+  # Arrange
+  local value='#[fg=red]#(id)#'
+
+  # Act
+  run publish_escape "${value}"
+
+  # Assert
+  [[ "${output}" == '##[fg=red]##(id)##' ]]
+}

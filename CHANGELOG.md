@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- An SSID, VPN name, or LAN address containing `#` was expanded by tmux as a
+  format, so a network named `#(cmd)` ran a command. Every `#` in those values
+  is now doubled before it reaches the status line.
 - In options mode, running the entry point a second time, as two overlapping
   config reloads do, found no placeholders left in the status line and
   published nothing, which froze every value. A metric whose option read is

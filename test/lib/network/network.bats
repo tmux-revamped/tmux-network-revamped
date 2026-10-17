@@ -415,3 +415,40 @@ teardown() {
 
   [[ "${output}" == "2.0KB/s" ]]
 }
+
+@test "network lib - an ssid carrying a format is escaped" {
+  # Arrange
+  _PLATFORM_OS_CACHE="Linux"
+  _read_iwgetid() { echo '#(touch /tmp/x)#[fg=red]'; }
+
+  # Act
+  run read_ssid
+
+  # Assert
+  [[ "${output}" == '##(touch /tmp/x)##[fg=red]' ]]
+}
+
+@test "network lib - a vpn name carrying a format is escaped" {
+  # Arrange
+  _PLATFORM_OS_CACHE="Linux"
+  _read_nmcli_active_linux() { printf '%s\n' '#{host}:vpn'; }
+
+  # Act
+  run read_vpn_name
+
+  # Assert
+  [[ "${output}" == '##{host}' ]]
+}
+
+@test "network lib - a lan address carrying a hash is escaped" {
+  # Arrange
+  _PLATFORM_OS_CACHE="Darwin"
+  default_iface() { echo "en0"; }
+  _read_ifaddr_macos() { echo '10.0.0.5#'; }
+
+  # Act
+  run read_lan_ip
+
+  # Assert
+  [[ "${output}" == '10.0.0.5##' ]]
+}
