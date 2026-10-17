@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-#
-# network.sh: command dispatcher for tmux-network-revamped.
-#
-# Usage: network.sh download | upload | speed | fg_color | bg_color | refresh
-#
-# The worker reads interface counters, computes the rate against the previous
-# counters held in tmux options, then stores the new counters for next time.
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -31,9 +24,6 @@ network_max_age() {
   get_tmux_option "@net_revamped_interval" "2"
 }
 
-# net_probe_max_age PROBE DEFAULT -> the per-probe refresh interval in seconds.
-# Heavy probes share the speed worker but read their own interval option so each
-# refreshes on a longer schedule than the fast speed sample.
 net_probe_max_age() {
   get_tmux_option "@net_revamped_${1}_interval" "${2}"
 }

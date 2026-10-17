@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# render.sh: map cached network values to text, an icon, and colors.
 
 [[ -n "${_NETWORK_REVAMPED_RENDER_LOADED:-}" ]] && return 0
 _NETWORK_REVAMPED_RENDER_LOADED=1
@@ -21,7 +19,6 @@ _net_level() {
   fi
 }
 
-# _net_total_level TOTAL_BPS -> tier from KB/s thresholds.
 _net_total_level() {
   local kbps=$(( ${1:-0} / 1024 ))
   _net_level "${kbps}" "$(get_tmux_option "@net_revamped_medium_thresh" "100")" \
@@ -67,8 +64,6 @@ net_render_wifi() {
   printf "${fmt}" "${1}"
 }
 
-# net_render_online VALUE -> a configurable label for the reachability state.
-# Defaults are plain text so the status bar stays readable without a glyph font.
 net_render_online() {
   if [[ "${1}" == "up" ]]; then
     get_tmux_option "@net_revamped_online_up_text" "on"

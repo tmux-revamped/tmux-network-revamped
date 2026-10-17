@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-#
-# network.sh: network throughput acquisition.
-#
-# Speed is the delta of interface byte counters between two refreshes. The pure
-# functions parse counters and compute and format rates; the readers wrap host
-# probes behind seams. The previous counters are held in tmux options by the
-# dispatcher, so no temp file is needed to remember them.
 
 [[ -n "${_NETWORK_REVAMPED_NETWORK_LOADED:-}" ]] && return 0
 _NETWORK_REVAMPED_NETWORK_LOADED=1
@@ -16,7 +9,6 @@ source "${_NET_LIB_DIR}/../utils/platform.sh"
 # shellcheck source=/dev/null
 source "${_NET_LIB_DIR}/../utils/publish.sh"
 
-# net_counters_from_proc TEXT IFACE -> "<rx> <tx>" from /proc/net/dev.
 net_counters_from_proc() {
   local line
   line=$(printf '%s\n' "${1}" | grep -E "^[[:space:]]*${2}:")
@@ -29,12 +21,10 @@ net_counters_from_proc() {
   echo "${rx} ${tx}"
 }
 
-# net_counters_from_netstat TEXT IFACE -> "<rx> <tx>" from `netstat -ib`.
 net_counters_from_netstat() {
   printf '%s\n' "${1}" | awk -v i="${2}" '$1 == i && NF >= 10 && $(NF-4) ~ /^[0-9]+$/ && $(NF-1) ~ /^[0-9]+$/ { print $(NF-4)" "$(NF-1); exit }'
 }
 
-# net_rate_compute CURRENT PREVIOUS SECONDS -> bytes per second, never negative.
 net_rate_compute() {
   [[ "${1}" =~ ^[0-9]+$ && "${2}" =~ ^[0-9]+$ && "${3}" =~ ^[0-9]+$ ]] || { echo 0; return 0; }
   (( ${3} <= 0 )) && { echo 0; return 0; }
@@ -68,7 +58,6 @@ net_now_ms() {
   fi
 }
 
-# net_format_rate BYTES_PER_SEC [PRECISION] -> human readable rate.
 net_format_rate() {
   local precision="${2:-1}"
   [[ "${precision}" =~ ^[0-9]$ ]] || precision=1
@@ -86,24 +75,19 @@ net_format_rate() {
   }'
 }
 
-# ping_ms_from_output TEXT -> integer milliseconds from a ping reply line.
 ping_ms_from_output() {
   printf '%s\n' "${1}" | grep -m1 'time=' | sed -E 's/.*time=([0-9.]+).*/\1/' | cut -d. -f1
 }
 
-# count_established TEXT -> number of ESTABLISHED connections in netstat output.
 count_established() {
   printf '%s\n' "${1}" | grep -c 'ESTABLISHED'
 }
 
-# valid_ipv4 TEXT -> the input when it is a dotted IPv4 address, else empty.
 valid_ipv4() {
   local ip="${1%%[[:space:]]*}"
   [[ "${ip}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] && echo "${ip}"
 }
 
-# online_from_probe RESULT -> "up" when a connectivity probe reported success: a
-# zero curl exit code, or a 2xx/3xx HTTP status. Empty otherwise.
 online_from_probe() {
   case "${1}" in
     0|2[0-9][0-9]|3[0-9][0-9]) echo "up" ;;
@@ -111,59 +95,46 @@ online_from_probe() {
   esac
 }
 
-# vpn_from_links_linux TEXT -> first VPN interface from `ip -o link show up`.
 vpn_from_links_linux() {
   printf '%s\n' "${1}" | grep -oE '(tun|tap|wg|ppp|nordlynx|tailscale)[0-9]*' | head -1
 }
 
-# vpn_from_routes_macos TEXT -> first VPN interface from `netstat -rn`.
 vpn_from_routes_macos() {
   printf '%s\n' "${1}" | grep -oE '(utun|tun|tap|ipsec|ppp)[0-9]+' | head -1
 }
 
-# wifi_from_sp_macos TEXT -> RSSI in dBm from `system_profiler SPAirPortDataType`.
 wifi_from_sp_macos() {
   printf '%s\n' "${1}" | grep -m1 'Signal / Noise' | grep -oE -- '-[0-9]+' | head -1
 }
 
-# wifi_from_proc_wireless TEXT -> RSSI in dBm from /proc/net/wireless.
 wifi_from_proc_wireless() {
   printf '%s\n' "${1}" | awk 'NR>2 { gsub(/[^0-9-]/, "", $4); print $4; exit }'
 }
 
-# ssid_from_sp_macos TEXT -> the current Wi-Fi network name from the
-# `system_profiler SPAirPortDataType` "Current Network Information" block. The
-# SSID is the indented label on the line right after the block header.
 ssid_from_sp_macos() {
   printf '%s\n' "${1}" | awk '/Current Network Information:/ { getline line; sub(/^[[:space:]]+/, "", line); sub(/:[[:space:]]*$/, "", line); print line; exit }'
 }
 
-# ssid_from_iwgetid TEXT -> the SSID printed bare by `iwgetid -r`, trimmed.
 ssid_from_iwgetid() {
   printf '%s\n' "${1}" | awk 'NR==1 { sub(/[[:space:]]+$/, "", $0); print; exit }'
 }
 
-# ssid_from_iw_link TEXT -> the SSID from an `iw dev <iface> link` "SSID:" line.
 ssid_from_iw_link() {
   printf '%s\n' "${1}" | awk '/SSID:/ { sub(/^.*SSID:[[:space:]]*/, "", $0); print; exit }'
 }
 
-# ipv4_from_ip_addr TEXT -> the IPv4 address from `ip addr show`, no prefix.
 ipv4_from_ip_addr() {
   printf '%s\n' "${1}" | awk '$1 == "inet" { split($2, a, "/"); print a[1]; exit }'
 }
 
-# vpn_name_from_scutil TEXT -> the name of the connected VPN from `scutil --nc list`.
 vpn_name_from_scutil() {
   printf '%s\n' "${1}" | awk -F'"' '/Connected/ { print $2; exit }'
 }
 
-# vpn_name_from_nmcli TEXT -> the NAME of the active vpn or wireguard connection.
 vpn_name_from_nmcli() {
   printf '%s\n' "${1}" | awk -F: '$2 == "vpn" || $2 == "wireguard" { print $1; exit }'
 }
 
-# Host-probe seams.
 _read_proc_net_dev() { cat /proc/net/dev 2>/dev/null; }
 _read_ping_linux() { ping -c 1 -w 1 8.8.8.8 2>/dev/null; }
 _read_ping_macos() { ping -c 1 -t 1 8.8.8.8 2>/dev/null; }
@@ -188,7 +159,6 @@ _read_ip_addr_linux() { ip addr show dev "${1}" 2>/dev/null; }
 _read_scutil_macos() { scutil --nc list 2>/dev/null; }
 _read_nmcli_active_linux() { nmcli -t -f NAME,TYPE connection show --active 2>/dev/null; }
 
-# read_wifi -> wifi RSSI in dBm, empty when unavailable.
 read_wifi() {
   if is_macos; then
     wifi_from_sp_macos "$(_read_sp_airport)"
@@ -197,10 +167,6 @@ read_wifi() {
   fi
 }
 
-# read_ssid -> the current Wi-Fi network name, empty when unavailable. macOS
-# reads the system_profiler current-network block. Linux prefers the bare
-# `iwgetid -r` output and falls back to parsing `iw dev link`. Each probe is
-# feature-detected: a missing tool makes its seam return empty.
 read_ssid() {
   publish_escape "$(_read_ssid_raw)"
 }
@@ -216,7 +182,6 @@ _read_ssid_raw() {
   fi
 }
 
-# read_ping -> latency in milliseconds, empty when unavailable.
 read_ping() {
   if is_linux; then
     ping_ms_from_output "$(_read_ping_linux)"
@@ -225,19 +190,14 @@ read_ping() {
   fi
 }
 
-# read_connections -> count of established connections.
 read_connections() {
   count_established "$(_read_netstat_an)"
 }
 
-# read_public_ip -> the public IPv4 address, empty when unavailable.
 read_public_ip() {
   valid_ipv4 "$(_read_public_ip)"
 }
 
-# read_online -> "up" when the host can reach the internet, empty otherwise. An
-# HTTP probe is preferred because corporate networks often filter ICMP; ping is
-# the fallback when curl is unavailable.
 read_online() {
   if command -v curl >/dev/null 2>&1; then
     online_from_probe "$(_read_curl_status)"
@@ -248,7 +208,6 @@ read_online() {
   fi
 }
 
-# read_vpn -> the active VPN interface name, empty when none.
 read_vpn() {
   publish_escape "$(_read_vpn_raw)"
 }
@@ -261,7 +220,6 @@ _read_vpn_raw() {
   fi
 }
 
-# read_lan_ip -> the LAN IPv4 of the default interface, empty when none.
 read_lan_ip() {
   publish_escape "$(_read_lan_ip_raw)"
 }
@@ -277,7 +235,6 @@ _read_lan_ip_raw() {
   fi
 }
 
-# read_vpn_name -> the human VPN connection name, empty when none.
 read_vpn_name() {
   publish_escape "$(_read_vpn_name_raw)"
 }
@@ -293,7 +250,6 @@ _read_netstat() { netstat -ib 2>/dev/null; }
 _default_iface_linux() { ip route show default 2>/dev/null | awk '/default/ { print $5; exit }'; }
 _default_iface_macos() { route -n get default 2>/dev/null | awk '/interface:/ { print $2; exit }'; }
 
-# default_iface -> the interface carrying the default route.
 default_iface() {
   if is_linux; then
     _default_iface_linux
@@ -302,7 +258,6 @@ default_iface() {
   fi
 }
 
-# read_counters IFACE -> "<rx> <tx>" for the interface, empty when unavailable.
 read_counters() {
   local iface="${1}"
   [[ -n "${iface}" ]] || { echo ""; return 0; }
