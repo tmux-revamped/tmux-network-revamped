@@ -1,189 +1,243 @@
 <div align="center">
 
-<h1>tmux-network-revamped</h1>
+# tmux-network-revamped
 
-**Network throughput in your tmux status bar, without ever blocking the render.**
+<strong>Network throughput in your tmux status bar, without ever blocking the render.</strong>
 
-[![Tests](https://github.com/tmux-revamped/tmux-network-revamped/actions/workflows/tests.yml/badge.svg)](https://github.com/tmux-revamped/tmux-network-revamped/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](CHANGELOG.md)
+English &nbsp;|&nbsp; [日本語](README.ja.md) &nbsp;|&nbsp; [简体中文](README.zh-Hans.md) &nbsp;|&nbsp; [繁體中文（香港）](README.zh-HK.md)
+
+[![Tests](https://github.com/tmux-revamped/tmux-network-revamped/actions/workflows/tests.yml/badge.svg)](https://github.com/tmux-revamped/tmux-network-revamped/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](CHANGELOG.md)
+
+<p align="center">
+  <a href="#what-it-does">What it does</a> &nbsp;|&nbsp;
+  <a href="#installation">Installation</a> &nbsp;|&nbsp;
+  <a href="#usage">Usage</a> &nbsp;|&nbsp;
+  <a href="#configuration">Configuration</a> &nbsp;|&nbsp;
+  <a href="#key-bindings">Key bindings</a> &nbsp;|&nbsp;
+  <a href="#how-it-works">How it works</a>
+</p>
 
 </div>
 
-**14** placeholders · **2** platforms · **95%+** coverage
+**14** placeholders, **2** render modes, macOS and Linux, tmux **3.2** or later.
 
-Surfaces network throughput, VPN interface and name, LAN IP, established connections, ping latency, public IP, wifi signal and network name, and internet reachability in your tmux status bar. A detached background worker reads interface byte counters and computes the rate; the status line reads the formatted result from a tmux server user-option and returns instantly. Previous counters live in tmux options too, so the delta needs no temp file.
+---
 
-Built from [tmux-plugin-template](https://github.com/tmux-revamped/tmux-plugin-template).
+## What it does
 
-<table>
-<tr>
-<td><strong>Non-blocking</strong><br/>The status line reads a cached value from a tmux user-option and returns instantly.</td>
-<td><strong>No temp files</strong><br/>Previous counters live in tmux options, so the rate delta needs no scratch file.</td>
-</tr>
-<tr>
-<td><strong>Cross-platform</strong><br/>macOS and Linux on both Intel and ARM with built-in tools, no extra package.</td>
-<td><strong>Tested</strong><br/>A [bats](https://github.com/bats-core/bats-core) suite holds 95%+ coverage across every probe.</td>
-</tr>
-</table>
-
-## Placeholders
+The plugin shows download and upload rates in the status line, plus the VPN, LAN address, open connections, Wi-Fi signal and network name. Ping latency, the public address and internet reachability are opt-in, because each one makes a network call.
 
 | Placeholder | Output |
-|-------------|--------|
-| `#{net_download}` | download rate, for example `1.2MB/s` |
-| `#{net_upload}` | upload rate, for example `256.0KB/s` |
-| `#{net_speed}` | download and upload together |
-| `#{net_fg_color}` | foreground color for the current tier |
-| `#{net_bg_color}` | background color for the current tier |
-| `#{net_vpn}` | active VPN interface, empty when none |
-| `#{net_vpn_name}` | human VPN connection name, needs `scutil` on macOS or `nmcli` on Linux |
-| `#{net_ip}` | LAN IPv4 of the active interface |
-| `#{net_connections}` | count of established connections |
-| `#{net_ping}` | latency to 8.8.8.8, opt-in |
-| `#{net_public_ip}` | public IPv4 address, opt-in |
-| `#{net_wifi}` | wifi signal strength in dBm, for example `-55dBm` |
-| `#{net_ssid}` | current Wi-Fi network name, empty when unavailable |
-| `#{net_online}` | reachability state, `on` or `off`, opt-in |
+|:------------|:-------|
+| `#{net_download}` | Download rate, such as `1.2MB/s` |
+| `#{net_upload}` | Upload rate, such as `256.0KB/s` |
+| `#{net_speed}` | Download and upload through `@net_revamped_speed_format` |
+| `#{net_fg_color}` | Foreground style for the current traffic tier |
+| `#{net_bg_color}` | Background style for the current traffic tier |
+| `#{net_vpn}` | Active VPN interface, such as `utun3` or `wg0`; empty when none |
+| `#{net_vpn_name}` | VPN connection name from `scutil` on macOS or `nmcli` on Linux |
+| `#{net_ip}` | IPv4 address of the default-route interface |
+| `#{net_connections}` | Number of established connections |
+| `#{net_ping}` | Latency to `8.8.8.8`, opt-in |
+| `#{net_public_ip}` | Public IPv4 address, opt-in |
+| `#{net_wifi}` | Wi-Fi signal strength, such as `-55dBm` |
+| `#{net_ssid}` | Current Wi-Fi network name |
+| `#{net_online}` | `on` or `off` for internet reachability, opt-in |
 
-## Install
+## Requirements
 
-With [TPM](https://github.com/tmux-plugins/tpm):
+| Requirement | Version |
+|:------------|:--------|
+| tmux | 3.2 or later |
+| bash | 3.2 or later |
+| curl | any, for `#{net_public_ip}` and `#{net_online}` |
+
+It runs on Linux and macOS with BSD, GNU or uutils coreutils. Each probe uses a tool the OS ships:
+
+| Data | macOS | Linux |
+|:-----|:------|:------|
+| Byte counters | `netstat -ib` | `/proc/net/dev` |
+| Default interface | `route -n get default` | `ip route show default` |
+| LAN address | `ipconfig getifaddr` | `ip addr show` |
+| VPN interface | `netstat -rn` | `ip -o link show up` |
+| VPN name | `scutil --nc list` | `nmcli` |
+| Wi-Fi signal and name | `system_profiler SPAirPortDataType` | `/proc/net/wireless`, `iwgetid` or `iw` |
+| Connections | `netstat -an` | `netstat -an` |
+
+A missing tool leaves its placeholder empty.
+
+## Installation
+
+With [TPM](https://github.com/tmux-plugins/tpm), add the plugin to `~/.tmux.conf` and press `prefix + I`:
 
 ```tmux
 set -g @plugin 'tmux-revamped/tmux-network-revamped'
-set -g status-right '#{net_fg_color}#{net_speed}'
 ```
 
-Press `prefix + I` to install.
+To install by hand, clone the repository and run the entrypoint from `~/.tmux.conf`:
 
-## Configuration
+```bash
+git clone https://github.com/tmux-revamped/tmux-network-revamped ~/.tmux/plugins/tmux-network-revamped
+```
 
-| Option | Default | Meaning |
-|--------|---------|---------|
-| `@net_revamped_interface` | auto | the interface to measure; empty auto-detects the default route |
-| `@net_revamped_precision` | `1` | decimal places for the rates, from `0` to `9`; a rate that rounds to 1000 or more moves up a unit, so `0` shows `1MB/s` rather than `1000KB/s` |
-| `@net_revamped_smoothing` | `0` | percent weight of the previous rate in an exponential moving average, from `1` to `99`; `0` shows each sample as measured, a higher value follows the trend rather than every burst |
-| `@net_revamped_interval` | `2` | seconds between samples, also the rate window |
-| `@net_revamped_speed_format` | `%s %s` | format for download and upload |
-| `@net_revamped_medium_thresh` | `100` | total kilobytes per second for the medium tier |
-| `@net_revamped_high_thresh` | `1000` | total kilobytes per second for the high tier |
-| `@net_revamped_{low,medium,high}_{fg,bg}_color` | empty | tier colors |
-| `@net_revamped_ping_enabled` | `0` | set to `1` to probe ping latency (makes a network call) |
-| `@net_revamped_ping_format` | `%sms` | format for the ping latency |
-| `@net_revamped_ping_interval` | `15` | seconds between ping probes, independent of the speed sample |
-| `@net_revamped_public_ip_enabled` | `0` | set to `1` to fetch the public IP (makes a network call) |
-| `@net_revamped_public_ip_interval` | `300` | seconds between public IP fetches, independent of the speed sample |
-| `@net_revamped_wifi_format` | `%sdBm` | format for the wifi signal |
-| `@net_revamped_online_enabled` | `0` | set to `1` to probe internet reachability over HTTP, which works where corporate firewalls drop ICMP (makes a network call) |
-| `@net_revamped_online_up_text` | `on` | label shown when reachable |
-| `@net_revamped_online_down_text` | `off` | label shown when not reachable |
-| `@net_revamped_online_interval` | `30` | seconds between reachability probes, independent of the speed sample |
-| `@net_revamped_enable_logging` | `0` | set to `1` to log under `~/.tmux/network-revamped-logs` |
+```tmux
+run-shell ~/.tmux/plugins/tmux-network-revamped/network-revamped.tmux
+```
 
-## Labels
+Set `status-left` or `status-right` before the plugin loads. The plugin replaces the placeholders it finds there once, at load time.
 
-Every value placeholder can carry a label, an icon or word printed before the value only when the value is not empty, so each figure on the bar says what it is. Set `@net_revamped_<metric>_label` for one metric, or `@net_revamped_icons` to `nerd` to label every metric from a Nerd Font set. A metric's own label wins over the set, and setting it to `''` removes the set's label for that metric. The default, `ascii`, adds no labels, so existing bars render unchanged.
+## Usage
 
-Set `@net_revamped_fixed_width` to `on` to pad every value on the left to the widest it can get, such as nine characters for a rate at the default precision, so a value that changes length, like `5.0KB/s` becoming `142.0KB/s`, never shifts the rest of a right-aligned status line. `@net_revamped_<metric>_width` sets one metric's width and wins over the fixed width. A longer value is never cut. Both are off by default.
+Put placeholders in the status line:
+
+```tmux
+set -g @net_revamped_low_fg_color '#[fg=green]'
+set -g @net_revamped_medium_fg_color '#[fg=yellow]'
+set -g @net_revamped_high_fg_color '#[fg=red]'
+
+set -g status-right '#{net_fg_color}#{net_speed}#[default] '
+```
+
+The same example is in [examples/status-right.tmux.conf](examples/status-right.tmux.conf).
+
+Turn on the probes that make network calls:
+
+```tmux
+set -g @net_revamped_ping_enabled '1'
+set -g @net_revamped_public_ip_enabled '1'
+set -g @net_revamped_online_enabled '1'
+```
+
+### Labels and widths
+
+`@net_revamped_<metric>_label` prints an icon or word before one metric, only when its value is not empty. `@net_revamped_icons` set to `nerd` labels every metric with a Nerd Font glyph. A metric's own label wins over the set, and an empty label removes it for that metric. The default, `ascii`, adds no labels.
+
+| Metric | `nerd` glyph |
+|:-------|:-------------|
+| `download` | U+F01DA |
+| `upload` | U+F0552 |
+| `speed` | U+F04E2 |
+| `vpn`, `vpn_name` | U+F0582 |
+| `ip` | U+F0A60 |
+| `wifi`, `ssid` | U+F05A9 |
+| `connections` | U+F0318 |
+| `ping` | U+F0003 |
+| `public_ip` | U+F01E7 |
+| `online` | U+F059F |
+
+`@net_revamped_fixed_width` set to `on` pads each value on the left to its widest form, so a rate going from `5.0KB/s` to `142.0KB/s` does not shift the rest of the line. That width is 9 characters for a rate at the default precision and 5 for ping. `@net_revamped_<metric>_width` sets one metric's width and wins over the fixed width. A longer value is never cut.
 
 ### Render mode
 
-By default each placeholder becomes a `#()` call, and tmux runs it on every status redraw, which can be about once a second when several plugins share the bar. Set `@net_revamped_render` to `options` and each placeholder becomes a read of a tmux option instead, such as `#{E:@net_revamped_out_download}`. One background process per server samples the interface counters every `@net_revamped_interval` seconds, 2 by default, writes every value the status line uses in a single tmux call, and redraws once, so values change together and nothing renders empty while a job runs. The process exits after its current tick when the server stops, and a config reload replaces it.
+By default each placeholder becomes a `#()` call, which tmux reruns on status redraws. With `@net_revamped_render` set to `options`, each placeholder becomes an option read such as `#{E:@net_revamped_out_download}`. One background process per server then samples every `@net_revamped_interval` seconds and writes all values in one tmux call, so they change together.
 
 ```tmux
 set -g @net_revamped_render 'options'
 set -g @net_revamped_fixed_width 'on'
 ```
 
+### Tier colors
 
-| Metric | `nerd` glyph |
-|--------|--------------|
-| `download` | U+F01DA |
-| `upload` | U+F0552 |
-| `speed` | U+F04E2 |
-| `vpn` | U+F0582 |
-| `vpn_name` | U+F0582 |
-| `ip` | U+F0A60 |
-| `wifi` | U+F05A9 |
-| `ssid` | U+F05A9 |
-| `connections` | U+F0318 |
-| `ping` | U+F0003 |
-| `public_ip` | U+F01E7 |
-| `online` | U+F059F |
+The tier styles are empty by default, so `#{net_fg_color}` and `#{net_bg_color}` print nothing until you set them. These palettes map low traffic to green, medium to yellow and high to red:
 
-## Theme color suggestions
+| Theme | Low | Medium | High |
+|:------|:----|:-------|:-----|
+| Catppuccin Mocha | `#a6e3a1` | `#f9e2af` | `#f38ba8` |
+| Dracula | `#50fa7b` | `#f1fa8c` | `#ff5555` |
+| Nord | `#a3be8c` | `#ebcb8b` | `#bf616a` |
+| Gruvbox Dark | `#b8bb26` | `#fabd2f` | `#fb4934` |
+| Tokyo Night | `#9ece6a` | `#e0af68` | `#f7768e` |
+| Solarized Dark | `#859900` | `#b58900` | `#dc322f` |
 
-The tier colors are empty by default, so `#{net_fg_color}` and `#{net_bg_color}` print nothing and the rate keeps the status line's own color until you set them. To color the tiers, copy one block below. Low traffic maps to green, medium to yellow, and high to red.
+Each value goes in a style, such as `set -g @net_revamped_low_fg_color '#[fg=#a6e3a1]'`.
 
-### Catppuccin Mocha
+## Configuration
 
-```tmux
-set -g @net_revamped_low_fg_color '#[fg=#a6e3a1]'
-set -g @net_revamped_medium_fg_color '#[fg=#f9e2af]'
-set -g @net_revamped_high_fg_color '#[fg=#f38ba8]'
-```
+### Sampling
 
-### Dracula
+| Option | Default | Meaning |
+|:-------|:--------|:--------|
+| `@net_revamped_interface` | empty | Interface to measure; empty uses the default-route interface |
+| `@net_revamped_interval` | `2` | Seconds between rate samples |
+| `@net_revamped_precision` | `1` | Decimal places for rates, `0` to `9`; a rate that rounds to 1000 or more moves up a unit, through GB/s |
+| `@net_revamped_smoothing` | `0` | Weight in percent, `1` to `99`, of the previous rate in a moving average; `0` shows each sample |
+| `@net_revamped_render` | empty | `options` reads published options instead of running `#()` calls |
 
-```tmux
-set -g @net_revamped_low_fg_color '#[fg=#50fa7b]'
-set -g @net_revamped_medium_fg_color '#[fg=#f1fa8c]'
-set -g @net_revamped_high_fg_color '#[fg=#ff5555]'
-```
+### Probes
 
-### Nord
+| Option | Default | Meaning |
+|:-------|:--------|:--------|
+| `@net_revamped_ping_enabled` | `0` | `1` pings `8.8.8.8` |
+| `@net_revamped_public_ip_enabled` | `0` | `1` fetches the public address from `icanhazip.com` |
+| `@net_revamped_online_enabled` | `0` | `1` requests `https://www.gstatic.com/generate_204`, or pings when curl is missing |
+| `@net_revamped_<probe>_interval` | `30` | Seconds between runs of one probe: `vpn`, `vpn_name`, `ip`, `connections`, `wifi`, `ssid`, `online` |
+| `@net_revamped_ping_interval` | `15` | Seconds between ping probes |
+| `@net_revamped_public_ip_interval` | `300` | Seconds between public address fetches |
+| `@net_revamped_online_interval` | `30` | Seconds between reachability probes |
 
-```tmux
-set -g @net_revamped_low_fg_color '#[fg=#a3be8c]'
-set -g @net_revamped_medium_fg_color '#[fg=#ebcb8b]'
-set -g @net_revamped_high_fg_color '#[fg=#bf616a]'
-```
+### Formats and labels
 
-### Gruvbox Dark
+| Option | Default | Meaning |
+|:-------|:--------|:--------|
+| `@net_revamped_speed_format` | `%s %s` | `printf` format for download, then upload |
+| `@net_revamped_ping_format` | `%sms` | `printf` format for the latency |
+| `@net_revamped_wifi_format` | `%sdBm` | `printf` format for the signal |
+| `@net_revamped_online_up_text` | `on` | Text when reachable |
+| `@net_revamped_online_down_text` | `off` | Text when not reachable; shown only with the probe on |
+| `@net_revamped_icons` | `ascii` | `nerd` labels every metric with a Nerd Font glyph |
+| `@net_revamped_<metric>_label` | empty | Label printed before one metric |
+| `@net_revamped_fixed_width` | `off` | `on` pads every value to its widest form |
+| `@net_revamped_<metric>_width` | empty | Width for one metric |
 
-```tmux
-set -g @net_revamped_low_fg_color '#[fg=#b8bb26]'
-set -g @net_revamped_medium_fg_color '#[fg=#fabd2f]'
-set -g @net_revamped_high_fg_color '#[fg=#fb4934]'
-```
+### Traffic tiers
 
-### Tokyo Night
+| Option | Default | Meaning |
+|:-------|:--------|:--------|
+| `@net_revamped_medium_thresh` | `100` | Combined download and upload, in KB/s, that starts the medium tier |
+| `@net_revamped_high_thresh` | `1000` | Combined download and upload, in KB/s, that starts the high tier |
+| `@net_revamped_{low,medium,high}_{fg,bg}_color` | empty | Style printed by `#{net_fg_color}` and `#{net_bg_color}` in each tier |
 
-```tmux
-set -g @net_revamped_low_fg_color '#[fg=#9ece6a]'
-set -g @net_revamped_medium_fg_color '#[fg=#e0af68]'
-set -g @net_revamped_high_fg_color '#[fg=#f7768e]'
-```
+### Internal state
 
-### Solarized Dark
+The plugin writes these options itself. Do not set them.
 
-```tmux
-set -g @net_revamped_low_fg_color '#[fg=#859900]'
-set -g @net_revamped_medium_fg_color '#[fg=#b58900]'
-set -g @net_revamped_high_fg_color '#[fg=#dc322f]'
-```
+| Option | Holds |
+|:-------|:------|
+| `@net_revamped_published` | Metrics found in the status line at load time |
+| `@net_revamped_out_<metric>` | Rendered value of each metric in `options` mode |
+| `@net_revamped_ticker_pid` | Process id of the `options` mode background process |
+| `@net_revamped_option_names` | Option names that background process reads each tick |
+| `@net_revamped_<key>`, `_ts`, `_lock` | Cached values, their timestamps and refresh locks, including the previous byte counters |
 
-## Support by platform and architecture
+## Key bindings
 
-Works on every supported platform and architecture with built-in tools, no extra
-package required. macOS (Intel and Apple Silicon) reads `netstat -ib`; Linux
-(x86_64 and arm64) reads `/proc/net/dev`. The default interface is detected with
-`route` on macOS and `ip route` on Linux.
+The plugin binds no keys.
 
-Wifi signal reads `system_profiler SPAirPortDataType` on macOS, which works without
-the `airport` binary Apple removed in macOS 14.4, and `/proc/net/wireless` on
-Linux. It reports RSSI in dBm; closer to zero is stronger.
+## How it works
+
+[`network-revamped.tmux`](network-revamped.tmux) runs once when tmux loads the plugin. It records which metrics `status-left` and `status-right` use in `@net_revamped_published`, then replaces each placeholder with a call to [`src/network.sh`](src/network.sh) or, in `options` mode, with an option read and starts the background process.
+
+In the default mode, each `#()` call returns the cached value at once. When the cache is older than its interval, the call starts a refresh in the background and takes a lock, so only one refresh runs at a time. The rate is the change in the interface byte counters divided by the elapsed milliseconds. The previous counters live in tmux options, so no file is written.
+
+SSID, VPN name, VPN interface and LAN address values have every `#` doubled before they reach the status line, so a network named `#(cmd)` prints as text instead of running.
+
+The parsers for each tool's output live in [`src/lib/network/network.sh`](src/lib/network/network.sh) and the formatting in [`src/lib/network/render.sh`](src/lib/network/render.sh).
 
 ## Development
 
-```bash
-make test      # run the bats suite
-make lint      # shellcheck every script
-make coverage  # run the suite under kcov
-```
+| Command | What it does |
+|:--------|:-------------|
+| `make test` | Runs the bats suite |
+| `make lint` | Runs shellcheck on every shell file |
+| `make coverage` | Measures line coverage with kcov on Linux and fails below 95% |
+
+Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-[MIT](LICENSE), copyright Gustavo Franco.
+[MIT](LICENSE)
 
 <!-- family:begin -->
 
@@ -206,26 +260,26 @@ memory, and `family/bin/sweep` is how it is discharged.
 | [`tmux-bluetooth-revamped`](https://github.com/tmux-revamped/tmux-bluetooth-revamped) | Every connected Bluetooth device and its battery in your tmux status bar, without blocking the render |
 | [`tmux-cpu-revamped`](https://github.com/tmux-revamped/tmux-cpu-revamped) | CPU load, temperature, and frequency in your tmux status bar, without ever blocking the render |
 | [`tmux-disk-revamped`](https://github.com/tmux-revamped/tmux-disk-revamped) | Disk usage for your tmux status bar, without ever blocking the status render |
-| [`tmux-extract-revamped`](https://github.com/tmux-revamped/tmux-extract-revamped) | Fuzzy-grab any URL, path, or word off the screen and paste it, pure shell, no Python |
-| [`tmux-fzf-revamped`](https://github.com/tmux-revamped/tmux-fzf-revamped) | Jump to any session, window, or pane, or kill it, from one fzf popup |
-| [`tmux-git-revamped`](https://github.com/tmux-revamped/tmux-git-revamped) | Git repository status in your tmux status bar, without ever blocking the render |
-| [`tmux-gpu-revamped`](https://github.com/tmux-revamped/tmux-gpu-revamped) | GPU load, temperature, frequency, and memory for your tmux status bar |
-| [`tmux-kube-revamped`](https://github.com/tmux-revamped/tmux-kube-revamped) | Current Kubernetes context and namespace in your tmux status bar, async, kubectl-free, never blocking |
+| [`tmux-extract-revamped`](https://github.com/tmux-revamped/tmux-extract-revamped) | Pick a URL, path, hash or any other token off the screen with fzf and type it at the cursor, in pure shell |
+| [`tmux-fzf-revamped`](https://github.com/tmux-revamped/tmux-fzf-revamped) | Switch to, kill, rename or create tmux sessions, windows and panes from fzf pickers in a popup |
+| [`tmux-git-revamped`](https://github.com/tmux-revamped/tmux-git-revamped) | Show the active pane's git branch, changes and provider counts in the tmux status bar without blocking it |
+| [`tmux-gpu-revamped`](https://github.com/tmux-revamped/tmux-gpu-revamped) | GPU load, temperature, clock, power and memory in the tmux status bar, from NVIDIA, AMD, Intel and Apple GPUs |
+| [`tmux-kube-revamped`](https://github.com/tmux-revamped/tmux-kube-revamped) | Current Kubernetes context and namespace in the tmux status bar, parsed from kubeconfig without kubectl |
 | [`tmux-launcher-revamped`](https://github.com/tmux-revamped/tmux-launcher-revamped) | Launch any TUI app in a popup or a window, scoped to the current pane's directory, with one configurable bindi |
 | [`tmux-logging-revamped`](https://github.com/tmux-revamped/tmux-logging-revamped) | Capture any pane to a file: live logging, full scrollback, or a one-shot screenshot |
 | [`tmux-music-revamped`](https://github.com/tmux-revamped/tmux-music-revamped) | Now playing in your tmux status bar, without ever blocking the status render |
 | [`tmux-network-revamped`](https://github.com/tmux-revamped/tmux-network-revamped) | **this plugin**, Network throughput in your tmux status bar, without ever blocking the render |
 | [`tmux-pain-control-revamped`](https://github.com/tmux-revamped/tmux-pain-control-revamped) | Standard pane and window management bindings for tmux, version aware, vim friendly, and fully configurable |
-| [`tmux-persist-revamped`](https://github.com/tmux-revamped/tmux-persist-revamped) | Save, auto-save, and restore your whole tmux environment, one plugin, no status-line tricks |
+| [`tmux-persist-revamped`](https://github.com/tmux-revamped/tmux-persist-revamped) | Save every tmux session, window and pane, auto-save on a timer, and restore it all after a reboot |
 | [`tmux-plugin-template`](https://github.com/tmux-revamped/tmux-plugin-template) | A template for building non-blocking tmux status plugins |
-| [`tmux-pomodoro-revamped`](https://github.com/tmux-revamped/tmux-pomodoro-revamped) | A Pomodoro timer in your tmux status bar, with zero temp files: all state lives in tmux options |
-| [`tmux-ram-revamped`](https://github.com/tmux-revamped/tmux-ram-revamped) | RAM usage for your tmux status bar, without ever blocking the status render |
-| [`tmux-reorder-revamped`](https://github.com/tmux-revamped/tmux-reorder-revamped) | Drag a window tab on the status bar with the mouse to move that window |
-| [`tmux-scroll-revamped`](https://github.com/tmux-revamped/tmux-scroll-revamped) | Mouse wheel that does the right thing: scroll the app directly, copy-mode everywhere else. No app names to con |
-| [`tmux-sensible-revamped`](https://github.com/tmux-revamped/tmux-sensible-revamped) | Sensible tmux defaults that normalize behavior across every tmux version, OS, and terminal, without clobbering |
-| [`tmux-tiling-revamped`](https://github.com/tmux-revamped/tmux-tiling-revamped) | BSP tiling window management for tmux. Eight layouts, nineteen operations, zero dependencies |
-| [`tmux-time-revamped`](https://github.com/tmux-revamped/tmux-time-revamped) | Local clock and world clocks in your tmux status bar, without ever blocking the render |
-| [`tmux-weather-revamped`](https://github.com/tmux-revamped/tmux-weather-revamped) | Weather in your tmux status bar, fetched in the background so the render never waits on the network |
+| [`tmux-pomodoro-revamped`](https://github.com/tmux-revamped/tmux-pomodoro-revamped) | A Pomodoro timer in the tmux status bar that keeps all of its state in tmux options, with no temp files |
+| [`tmux-ram-revamped`](https://github.com/tmux-revamped/tmux-ram-revamped) | RAM, swap and memory pressure in the tmux status bar, sampled in the background so the render never waits |
+| [`tmux-reorder-revamped`](https://github.com/tmux-revamped/tmux-reorder-revamped) | Drag a window tab along the tmux status bar with the mouse to move that window |
+| [`tmux-scroll-revamped`](https://github.com/tmux-revamped/tmux-scroll-revamped) | Send the mouse wheel to apps that scroll themselves and into tmux copy-mode everywhere else |
+| [`tmux-sensible-revamped`](https://github.com/tmux-revamped/tmux-sensible-revamped) | Sensible tmux defaults, gated by tmux version and terminal, that leave the options you set alone |
+| [`tmux-tiling-revamped`](https://github.com/tmux-revamped/tmux-tiling-revamped) | Tiling window management for tmux: eight layouts including BSP dwindle and spiral, with layout undo |
+| [`tmux-time-revamped`](https://github.com/tmux-revamped/tmux-time-revamped) | Local and world clocks for the tmux status bar, colored by time of day, with countdowns and a DST warning |
+| [`tmux-weather-revamped`](https://github.com/tmux-revamped/tmux-weather-revamped) | Weather for the tmux status bar from wttr.in, fetched in the background so the status line never waits |
 
 ### Checking an installation
 
