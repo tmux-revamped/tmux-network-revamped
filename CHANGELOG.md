@@ -68,6 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   apart, so a sample 2.9 seconds after the last one was divided by 2 and read
   about 45 percent high. Samples are now timed in milliseconds from bash 5's
   `EPOCHREALTIME`, falling back to whole seconds on older bash.
+- Switching from options mode back to jobs mode left the background process
+  running. Jobs mode now releases it, and it exits on its next tick.
 
 ## [1.4.0] - 2026-06-29
 

@@ -79,3 +79,15 @@ teardown() {
   # Assert
   [[ "$(cat "$(_mock_opt_file status-right)")" == "[#(${dir}/src/network.sh download)]" ]]
 }
+
+@test "entry - jobs mode releases a running ticker so the daemon exits" {
+  # Arrange
+  tmux set-option -gq "@net_revamped_ticker_pid" "4242"
+  tmux set-option -gq "status-right" "[#{net_download}]"
+
+  # Act
+  bash "${ENTRY}"
+
+  # Assert
+  [ ! -f "$(_mock_opt_file @net_revamped_ticker_pid)" ]
+}
