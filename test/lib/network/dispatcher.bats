@@ -69,11 +69,34 @@ teardown() {
   [[ "$(cache_get upload)" == "0B/s" ]]
 }
 
-@test "network.sh dispatcher - refresh keeps the last value when unreadable" {
+@test "network.sh dispatcher - refresh blanks the rates when counters are unreadable" {
+  # Arrange
   cache_set download "9.9MB/s"
+  cache_set upload "1.0MB/s"
   read_counters() { echo ""; }
+
+  # Act
   network_refresh
-  [[ "$(cache_get download)" == "9.9MB/s" ]]
+
+  # Assert
+  [[ -z "$(cache_get download)" ]] || false
+  [[ -z "$(cache_get upload)" ]]
+}
+
+@test "network.sh dispatcher - the online probe runs when the default route is gone" {
+  # Arrange
+  set_tmux_option "@net_revamped_online_enabled" "1"
+  cache_set online "up"
+  export MOCK_EPOCH=$(( MOCK_EPOCH + 31 ))
+  default_iface() { echo ""; }
+  read_counters() { echo ""; }
+  read_online() { echo ""; }
+
+  # Act
+  network_refresh
+
+  # Assert
+  [[ -z "$(cache_get online)" ]]
 }
 
 @test "network.sh dispatcher - download renders the cached value" {

@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- When the default route disappeared, the worker stopped before the
+  reachability probe, so `#{net_online}` kept showing `on` and the rates froze
+  at their last value. The probes now always run, and unreadable counters
+  blank the rates.
 - An SSID, VPN name, or LAN address containing `#` was expanded by tmux as a
   format, so a network named `#(cmd)` ran a command. Every `#` in those values
   is now doubled before it reaches the status line.

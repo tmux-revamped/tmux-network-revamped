@@ -45,11 +45,23 @@ net_interface() {
   default_iface
 }
 
-network_refresh() {
+network_clear_rates() {
+  cache_set download ""
+  cache_set upload ""
+  cache_set total ""
+  cache_set down_smooth ""
+  cache_set up_smooth ""
+  cache_set sample_ms ""
+}
+
+network_sample_rates() {
   local iface rx tx now prev_rx prev_tx prev_ts dt down up
   iface=$(net_interface)
   read -r rx tx <<< "$(read_counters "${iface}")"
-  [[ "${rx}" =~ ^[0-9]+$ ]] || return 0
+  if [[ ! "${rx}" =~ ^[0-9]+$ || ! "${tx}" =~ ^[0-9]+$ ]]; then
+    network_clear_rates
+    return 0
+  fi
 
   now=$(net_now_ms)
   prev_rx=$(cache_get rx_raw)
@@ -80,7 +92,9 @@ network_refresh() {
   cache_set rx_raw "${rx}"
   cache_set tx_raw "${tx}"
   cache_set sample_ms "${now}"
+}
 
+network_refresh_probes() {
   cache_set_if_stale vpn "$(net_probe_max_age vpn 30)" read_vpn
   cache_set_if_stale connections "$(net_probe_max_age connections 30)" read_connections
   cache_set_if_stale wifi "$(net_probe_max_age wifi 30)" read_wifi
@@ -96,6 +110,12 @@ network_refresh() {
   if [[ "$(get_tmux_option "@net_revamped_online_enabled" "0")" == "1" ]]; then
     cache_set_if_stale online "$(net_probe_max_age online 30)" read_online
   fi
+  return 0
+}
+
+network_refresh() {
+  network_refresh_probes
+  network_sample_rates
   return 0
 }
 
