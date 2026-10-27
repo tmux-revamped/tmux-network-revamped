@@ -4,6 +4,9 @@ shopt -u patsub_replacement 2>/dev/null || true
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NET_CMD="${PLUGIN_DIR}/src/network.sh"
+NET_CMD_ARG="$(printf '%q' "${NET_CMD}")"
+hash="#"
+NET_CMD_ARG=${NET_CMD_ARG//"${hash}"/"${hash}${hash}"}
 
 placeholders=(
   "\#{net_download}"
@@ -23,20 +26,20 @@ placeholders=(
 )
 
 commands=(
-  "#(${NET_CMD} download)"
-  "#(${NET_CMD} upload)"
-  "#(${NET_CMD} speed)"
-  "#(${NET_CMD} fg_color)"
-  "#(${NET_CMD} bg_color)"
-  "#(${NET_CMD} vpn_name)"
-  "#(${NET_CMD} vpn)"
-  "#(${NET_CMD} ip)"
-  "#(${NET_CMD} connections)"
-  "#(${NET_CMD} ping)"
-  "#(${NET_CMD} public_ip)"
-  "#(${NET_CMD} wifi)"
-  "#(${NET_CMD} ssid)"
-  "#(${NET_CMD} online)"
+  "#(${NET_CMD_ARG} download)"
+  "#(${NET_CMD_ARG} upload)"
+  "#(${NET_CMD_ARG} speed)"
+  "#(${NET_CMD_ARG} fg_color)"
+  "#(${NET_CMD_ARG} bg_color)"
+  "#(${NET_CMD_ARG} vpn_name)"
+  "#(${NET_CMD_ARG} vpn)"
+  "#(${NET_CMD_ARG} ip)"
+  "#(${NET_CMD_ARG} connections)"
+  "#(${NET_CMD_ARG} ping)"
+  "#(${NET_CMD_ARG} public_ip)"
+  "#(${NET_CMD_ARG} wifi)"
+  "#(${NET_CMD_ARG} ssid)"
+  "#(${NET_CMD_ARG} online)"
 )
 
 render_mode="$(tmux show-option -gqv "@net_revamped_render")"
@@ -54,9 +57,10 @@ target_for() {
 
 interpolate() {
   local value="${1}"
-  local i
+  local i target
   for (( i = 0; i < ${#placeholders[@]}; i++ )); do
-    value="${value//${placeholders[i]}/$(target_for "${commands[i]}")}"
+    target="$(target_for "${commands[i]}")"
+    value=${value//${placeholders[i]}/"${target}"}
   done
   echo "${value}"
 }

@@ -66,9 +66,9 @@ teardown() {
   [[ "$(cat "$(_mock_opt_file @net_revamped_published)")" == "download" ]]
 }
 
-@test "entry - a plugin path containing an ampersand stays literal" {
+@test "entry - a plugin path with an ampersand and a space reaches the shell as one word" {
   # Arrange
-  local dir="${TEST_TMPDIR}/a&b"
+  local dir="${TEST_TMPDIR}/a&b c"
   mkdir -p "${dir}/src"
   cp -f "${ENTRY}" "${dir}/network-revamped.tmux"
   tmux set-option -gq "status-right" "[#{net_download}]"
@@ -77,7 +77,7 @@ teardown() {
   bash "${dir}/network-revamped.tmux"
 
   # Assert
-  [[ "$(cat "$(_mock_opt_file status-right)")" == "[#(${dir}/src/network.sh download)]" ]]
+  [ "$(cat "$(_mock_opt_file status-right)")" = "[#(${TEST_TMPDIR}/a\\&b\\ c/src/network.sh download)]" ]
 }
 
 @test "entry - jobs mode releases a running ticker so the daemon exits" {
