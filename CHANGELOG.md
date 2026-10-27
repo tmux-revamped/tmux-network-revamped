@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-27
+
 ### Added
 
 - `@net_revamped_render 'options'` replaces the `#()` calls with tmux option
@@ -38,6 +40,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A plugin directory whose path holds a space or an `&` broke every status-line
+  placeholder, because the path reached `/bin/sh` unquoted. The path is now
+  shell-quoted.
 - On bash 5.2 and later, a plugin path containing `&` was rewritten while
   placeholders were replaced, because `&` in a replacement stands for the
   matched text. The entry point now turns that behaviour off.
