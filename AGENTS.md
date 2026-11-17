@@ -26,7 +26,6 @@ Guidance for anyone, human or agent, changing tmux-network-revamped. What it is 
 ## Behaviour
 
 - Shows network throughput, addresses, VPN and Wi-Fi in the status line, without blocking the render.
-- `M-e` opens the detail popup.
 - At load the entry point records which metrics the status line uses in `@net_revamped_published`, then replaces each placeholder with a `#()` call or, in options mode, an option read.
 
 ## Domain rules
@@ -44,8 +43,9 @@ Guidance for anyone, human or agent, changing tmux-network-revamped. What it is 
 
 ## Gaps against FAMILY.md
 
-As of 2026-11-15:
+As of 2026-11-17:
 
+- The family allocates `M-e` to its detail popup, and the plugin binds no key and has no popup yet.
 - Every script is bash, under `#!/usr/bin/env bash`, not POSIX `sh`, so it is untested under `dash`, `zsh` and BusyBox `sh`.
 - The code lives in [`src/`](src) and [`src/lib/`](src/lib); there is no `bin/network-revamped`, `lib/state.sh` or `lib/core.sh`.
 - No `network-revamped` command with `help`, `version` and `doctor` in the family's form, no man page, no completions and no `manifest.json`.
