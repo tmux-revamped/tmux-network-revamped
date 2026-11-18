@@ -1,0 +1,4 @@
+$ network-revamped version
+network-revamped <version>
+tmux: 3.8
+exit 0

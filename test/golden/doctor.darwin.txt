@@ -1,0 +1,18 @@
+$ network-revamped doctor
+tmux               ok       <path>, 3.8
+route              warn     without it no interface is found, so set @net_revamped_interface
+netstat            warn     without it the rates, the VPN link and the connections stay empty
+ipconfig           warn     without it the LAN address stays empty
+scutil             warn     without it the VPN name stays empty
+system_profiler    warn     without it the Wi-Fi name and signal stay empty
+ping               warn     without it the latency stays empty
+curl               warn     without it the public address stays empty and reachability falls back to ping
+clock              ok       date counts nanoseconds, so a rate is exact to the millisecond
+keys               ok       every key it binds is free or its own
+gum                ok       <path>
+awk                ok       <path>, <flavor>
+sed                ok       <path>, <flavor>
+tr                 ok       <path>, <flavor>
+date               ok       <path>, <flavor>
+cat                ok       <path>, <flavor>
+exit 0

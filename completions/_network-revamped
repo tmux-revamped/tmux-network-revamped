@@ -1,0 +1,86 @@
+#compdef network-revamped
+
+_network_revamped() {
+  local -a commands
+  commands=(
+    'apply:bind the key and fill the status placeholders'
+    'list:print every command apply would send'
+    'status:print one placeholder'
+    'refresh:sample the network now'
+    'card:print every reading as a table'
+    'popup:open the card in a tmux popup'
+    'daemon:publish the placeholders on every tick'
+    'doctor:check this machine'
+    'version:print the version'
+    'help:print the help page'
+  )
+
+  _arguments \
+    '--json[list prints one JSON object]' \
+    '--theme[colours of the terminal interface]:theme:(kodougu catppuccin-mocha catppuccin-latte dracula nord gruvbox tokyo-night mono)' \
+    '--popup-key[key of the detail popup]:value:' \
+    '--interface[interface to measure]:value:' \
+    '--interval[seconds a rate stays fresh]:value:' \
+    '--precision[decimal places of a rate]:value:(0 1 2 3 4 5 6 7 8 9)' \
+    '--smoothing[percent of the previous rate kept]:value:' \
+    '--render[jobs or options]:value:(jobs options)' \
+    '--ping-enabled[turn the ping probe on]:value:(0 1)' \
+    '--public-ip-enabled[turn the public address probe on]:value:(0 1)' \
+    '--online-enabled[turn the reachability probe on]:value:(0 1)' \
+    '--vpn-interval[seconds between VPN link probes]:value:' \
+    '--vpn-name-interval[seconds between VPN name probes]:value:' \
+    '--ip-interval[seconds between LAN address probes]:value:' \
+    '--connections-interval[seconds between connection counts]:value:' \
+    '--wifi-interval[seconds between Wi-Fi signal probes]:value:' \
+    '--ssid-interval[seconds between Wi-Fi name probes]:value:' \
+    '--online-interval[seconds between reachability probes]:value:' \
+    '--ping-interval[seconds between pings]:value:' \
+    '--public-ip-interval[seconds between public address fetches]:value:' \
+    '--speed-format[printf format for both rates]:value:' \
+    '--ping-format[printf format for the latency]:value:' \
+    '--wifi-format[printf format for the signal]:value:' \
+    '--online-up-text[text when reachable]:value:' \
+    '--online-down-text[text when not reachable]:value:' \
+    '--icons[ascii or nerd]:value:(ascii nerd)' \
+    '--fixed-width[pad every value to its widest form]:value:(on off)' \
+    '--download-label[label before the download rate]:value:' \
+    '--upload-label[label before the upload rate]:value:' \
+    '--speed-label[label before both rates]:value:' \
+    '--vpn-label[label before the VPN link]:value:' \
+    '--vpn-name-label[label before the VPN name]:value:' \
+    '--ip-label[label before the LAN address]:value:' \
+    '--wifi-label[label before the Wi-Fi signal]:value:' \
+    '--ssid-label[label before the Wi-Fi name]:value:' \
+    '--connections-label[label before the connection count]:value:' \
+    '--ping-label[label before the latency]:value:' \
+    '--public-ip-label[label before the public address]:value:' \
+    '--online-label[label before the reachability text]:value:' \
+    '--download-width[width of the download rate]:value:' \
+    '--upload-width[width of the upload rate]:value:' \
+    '--speed-width[width of both rates]:value:' \
+    '--vpn-width[width of the VPN link]:value:' \
+    '--vpn-name-width[width of the VPN name]:value:' \
+    '--ip-width[width of the LAN address]:value:' \
+    '--wifi-width[width of the Wi-Fi signal]:value:' \
+    '--ssid-width[width of the Wi-Fi name]:value:' \
+    '--connections-width[width of the connection count]:value:' \
+    '--ping-width[width of the latency]:value:' \
+    '--public-ip-width[width of the public address]:value:' \
+    '--online-width[width of the reachability text]:value:' \
+    '--medium-thresh[KB/s that starts the medium tier]:value:' \
+    '--high-thresh[KB/s that starts the high tier]:value:' \
+    '--low-fg-color[style of the low tier]:value:' \
+    '--medium-fg-color[style of the medium tier]:value:' \
+    '--high-fg-color[style of the high tier]:value:' \
+    '--low-bg-color[style of the low tier]:value:' \
+    '--medium-bg-color[style of the medium tier]:value:' \
+    '--high-bg-color[style of the high tier]:value:' \
+    '1:command:->command' \
+    '2:name:(download upload speed fg_color bg_color vpn vpn_name ip wifi ssid connections ping public_ip online)'
+
+  if [[ "${state}" == command ]]; then
+    _describe 'command' commands
+  fi
+}
+
+_network_revamped "$@"

@@ -4,61 +4,46 @@
 
 <strong>在 tmux 狀態列顯示網絡傳輸量，從不阻塞繪製。</strong>
 
-[English](README.md) | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | 繁體中文（香港）
+[English](README.md) &nbsp;|&nbsp; [日本語](README.ja.md) &nbsp;|&nbsp; [简体中文](README.zh-Hans.md) &nbsp;|&nbsp; 繁體中文（香港）
 
-[![family](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-network-revamped/family.yml?branch=main&style=flat-square&label=family)](https://github.com/tmux-revamped/tmux-network-revamped/actions/workflows/family.yml)
-[![tests](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-network-revamped/tests.yml?branch=main&style=flat-square&label=tests)](https://github.com/tmux-revamped/tmux-network-revamped/actions/workflows/tests.yml)
+[![ci](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-network-revamped/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/tmux-revamped/tmux-network-revamped/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/tmux-revamped/tmux-network-revamped?style=flat-square&label=release)](https://github.com/tmux-revamped/tmux-network-revamped/releases/latest)
 [![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/tmux-revamped/tmux-network-revamped?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/tmux-revamped/tmux-network-revamped)
 [![license](https://img.shields.io/github/license/tmux-revamped/tmux-network-revamped?style=flat-square&label=license)](LICENSE)
 
 <p align="center">
-  <a href="#what-it-does">功能</a> |
-  <a href="#installation">安裝</a> |
-  <a href="#usage">用法</a> |
-  <a href="#configuration">設定</a> |
-  <a href="#key-bindings">按鍵綁定</a> |
-  <a href="#how-it-works">運作原理</a>
+  <a href="#快速開始"><strong>快速開始</strong></a> &nbsp;|&nbsp;
+  <a href="#用法">用法</a> &nbsp;|&nbsp;
+  <a href="#運作原理">運作原理</a> &nbsp;|&nbsp;
+  <a href="#畫面">畫面</a>
 </p>
 
 </div>
+
+<p align="center">
+  <img src="screens/hero.gif" alt="network-revamped 在狀態列中顯示網速及各項探測，開啟詳情彈出視窗，並切換到 Nerd Font 標籤和 options 繪製模式" width="800">
+</p>
+
+```console
+$ network-revamped refresh
+Refreshed. en0 moves 55.2KB/s down and 18.4KB/s up.
+$ network-revamped status speed
+55.2KB/s 18.4KB/s
+```
 
 **14** 個佔位符，**2** 種繪製模式，支援 macOS 和 Linux，需要 tmux **3.2** 或以上版本。
 
 ---
 
-<a id="what-it-does"></a>
+## 快速開始
 
-## 功能
+### 前提條件
 
-插件在狀態列顯示下載和上載速率，以及 VPN、區域網絡地址、已建立的連線數目、Wi-Fi 訊號強度和網絡名稱。Ping 延遲、公共地址和互聯網連線狀態須手動開啟，因為它們都會發出網絡請求。
-
-| 佔位符 | 輸出 |
-|:-------|:-----|
-| `#{net_download}` | 下載速率，例如 `1.2MB/s` |
-| `#{net_upload}` | 上載速率，例如 `256.0KB/s` |
-| `#{net_speed}` | 按 `@net_revamped_speed_format` 格式化的下載和上載速率 |
-| `#{net_fg_color}` | 目前流量級別的前景樣式 |
-| `#{net_bg_color}` | 目前流量級別的背景樣式 |
-| `#{net_vpn}` | 使用中的 VPN 介面，例如 `utun3` 或 `wg0`；沒有時為空 |
-| `#{net_vpn_name}` | VPN 連線名稱，macOS 上來自 `scutil`，Linux 上來自 `nmcli` |
-| `#{net_ip}` | 預設路由介面的 IPv4 地址 |
-| `#{net_connections}` | 已建立的連線數目 |
-| `#{net_ping}` | 到 `8.8.8.8` 的延遲，須手動開啟 |
-| `#{net_public_ip}` | 公共 IPv4 地址，須手動開啟 |
-| `#{net_wifi}` | Wi-Fi 訊號強度，例如 `-55dBm` |
-| `#{net_ssid}` | 目前 Wi-Fi 網絡名稱 |
-| `#{net_online}` | 表示互聯網連線狀態的 `on` 或 `off`，須手動開啟 |
-
-<a id="requirements"></a>
-
-## 系統要求
-
-| 要求 | 版本 |
-|:-----|:-----|
-| tmux | 3.2 或以上 |
-| bash | 3.2 或以上 |
-| curl | 任何版本，用於 `#{net_public_ip}` 和 `#{net_online}` |
+| 工具 | 版本 | 用途 |
+|:-----|:--------|:---------|
+| tmux | 3.2 或以上 | 家族的最低版本，彈出視窗亦需要它 |
+| curl | 可選 | 用於 `#{net_public_ip}` 和 `#{net_online}`；沒有它時，連線狀態改用 ping 檢測 |
+| gum | 可選 | `network-revamped` 的選單、表格及顏色；沒有它，所有命令都輸出純文字 |
 
 可在 Linux 和 macOS 上執行，支援 BSD、GNU 或 uutils coreutils。每個探測都使用作業系統內置的工具：
 
@@ -70,13 +55,11 @@
 | VPN 介面 | `netstat -rn` | `ip -o link show up` |
 | VPN 名稱 | `scutil --nc list` | `nmcli` |
 | Wi-Fi 訊號和名稱 | `system_profiler SPAirPortDataType` | `/proc/net/wireless`、`iwgetid` 或 `iw` |
-| 連線數目 | `netstat -an` | `netstat -an` |
+| 連線數目 | `netstat -an` | `netstat -an` 或 `ss` |
 
 缺少某個工具時，相應的佔位符為空。
 
-<a id="installation"></a>
-
-## 安裝
+### 安裝
 
 使用 [TPM](https://github.com/tmux-plugins/tpm) 時，將插件加入 `~/.tmux.conf`，然後按 `prefix + I`：
 
@@ -96,9 +79,34 @@ run-shell ~/.tmux/plugins/tmux-network-revamped/network-revamped.tmux
 
 請在插件載入之前設定 `status-left` 或 `status-right`。插件只在載入時替換一次其中的佔位符。
 
-<a id="usage"></a>
+在複製的目錄中執行 `make install`，亦會把 `network-revamped` 放入 `~/.local/bin`，並把它的 man 手冊和自動完成放在 `~/.local/share` 下。
+
+### 驗證
+
+```bash
+~/.tmux/plugins/tmux-network-revamped/bin/network-revamped doctor
+```
 
 ## 用法
+
+插件在狀態列顯示下載和上載速率，以及 VPN、區域網絡地址、已建立的連線數目、Wi-Fi 訊號強度和網絡名稱。Ping 延遲、公共地址和互聯網連線狀態須手動開啟，因為它們都會發出網絡請求。
+
+| 佔位符 | 輸出 |
+|:-------|:-----|
+| `#{net_download}` | 下載速率，例如 `1.2MB/s` |
+| `#{net_upload}` | 上載速率，例如 `256.0KB/s` |
+| `#{net_speed}` | 按 `@net_revamped_speed_format` 格式化的下載和上載速率 |
+| `#{net_fg_color}` | 目前流量級別的前景樣式 |
+| `#{net_bg_color}` | 目前流量級別的背景樣式 |
+| `#{net_vpn}` | 使用中的 VPN 介面，例如 `utun3` 或 `wg0`；沒有時為空 |
+| `#{net_vpn_name}` | VPN 連線名稱，macOS 上來自 `scutil`，Linux 上來自 `nmcli` |
+| `#{net_ip}` | 預設路由介面的 IPv4 地址 |
+| `#{net_connections}` | 已建立的連線數目 |
+| `#{net_ping}` | 到 `8.8.8.8` 的延遲，須手動開啟 |
+| `#{net_public_ip}` | 公共 IPv4 地址，須手動開啟 |
+| `#{net_wifi}` | Wi-Fi 訊號強度，例如 `-55dBm` |
+| `#{net_ssid}` | 目前 Wi-Fi 網絡名稱 |
+| `#{net_online}` | 表示互聯網連線狀態的 `on` 或 `off`，須手動開啟 |
 
 在狀態列中放入佔位符：
 
@@ -122,7 +130,7 @@ set -g @net_revamped_online_enabled '1'
 
 ### 標籤和闊度
 
-`@net_revamped_<metric>_label` 只在值不為空時，於該指標前顯示一個圖示或文字。將 `@net_revamped_icons` 設為 `nerd` 後，每個指標都會加上 Nerd Font 圖示。個別指標的標籤優先於這套圖示，設為空標籤即移除該指標的標籤。預設值 `ascii` 不加任何標籤。
+`@net_revamped_<metric>_label` 只在值不為空時，於該指標前顯示一個圖示或文字。將 `@net_revamped_icons` 設為 `nerd` 後，每個指標都會加上 Nerd Font 圖示。個別指標的標籤優先於這套圖示。預設值 `ascii` 不加任何標籤。
 
 | 指標 | `nerd` 圖示 |
 |:-----|:------------|
@@ -163,9 +171,23 @@ set -g @net_revamped_fixed_width 'on'
 
 每個值都寫成樣式，例如 `set -g @net_revamped_low_fg_color '#[fg=#a6e3a1]'`。
 
-<a id="configuration"></a>
+| 命令 | 作用 |
+|:--------|:-------------|
+| `network-revamped apply` | 立即綁定彈出視窗的按鍵並替換佔位符；插件載入時入口點會執行它 |
+| `network-revamped list` | 列印 `apply` 會傳送的每條命令，不作任何修改；`--json` 輸出一個物件 |
+| `network-revamped status NAME` | 列印一個佔位符，例如 `speed`、`ip` 或 `ssid`；狀態列會執行它 |
+| `network-revamped refresh` | 立即對網絡取樣，並說明目前的速率 |
+| `network-revamped card` | 立即讀取所有數據，每項佔一行 |
+| `network-revamped popup` | 在 tmux 彈出視窗中開啟卡片；彈出視窗的按鍵會執行它 |
+| `network-revamped daemon` | 為 `options` 繪製模式在每個週期發佈佔位符；由 `apply` 啟動 |
+| `network-revamped doctor` | 每個依賴一行：每項數據所用的工具或檔案、時鐘的精確度，以及沒有改動的按鍵 |
+| `network-revamped version` | 版本號及 tmux 的版本 |
+| `network-revamped help` | 說明頁；`man network-revamped` 記錄了同樣的命令和設定 |
+| `network-revamped` | 在終端機上顯示選單 |
 
 ## 設定
+
+每個選項亦可寫成帶連字號的命令選項，例如 `--precision 2`，或環境變數，例如 `NETWORK_REVAMPED_PRECISION`；命令列優先於環境變數，環境變數優先於 tmux 選項。空的 tmux 選項表示使用預設值。傳給 `apply` 的選項會隨彈出視窗的按鍵和每次狀態呼叫一同生效。
 
 ### 取樣
 
@@ -173,9 +195,9 @@ set -g @net_revamped_fixed_width 'on'
 |:-----|:-------|:-----|
 | `@net_revamped_interface` | 空 | 要量度的介面；為空時使用預設路由介面 |
 | `@net_revamped_interval` | `2` | 速率取樣的間隔秒數 |
-| `@net_revamped_precision` | `1` | 速率的小數位數，`0` 至 `9`；四捨五入後達 1000 或以上時進一個單位，最高至 GB/s |
+| `@net_revamped_precision` | `1` | 速率的小數位數，`0` 至 `9`；四捨五入後達 1000 或以上時進一個單位，最高至 TB/s |
 | `@net_revamped_smoothing` | `0` | 移動平均中上一次速率所佔的百分比權重，`1` 至 `99`；`0` 顯示每次取樣的原值 |
-| `@net_revamped_render` | 空 | 設為 `options` 時讀取已發佈的選項，而不執行 `#()` 呼叫 |
+| `@net_revamped_render` | `jobs` | 設為 `options` 時讀取已發佈的選項，而不執行 `#()` 呼叫 |
 
 ### 探測
 
@@ -223,41 +245,115 @@ set -g @net_revamped_fixed_width 'on'
 | `@net_revamped_option_names` | 該背景程序每次讀取的選項名稱 |
 | `@net_revamped_<key>`、`_ts`、`_lock` | 快取的值、其時間戳記和更新鎖，包括上一次的位元組計數器 |
 
-<a id="key-bindings"></a>
-
 ## 按鍵綁定
 
-本插件不綁定任何按鍵。
+| 按鍵 | 動作 | 預設 |
+|:-----|:-----|:-----|
+| `prefix + M-e` | 顯示所有數據的詳情彈出視窗；按 Enter 關閉 | 已綁定 |
 
-<a id="how-it-works"></a>
+`@net_revamped_popup_key` 可以指定其他按鍵，設為 `off` 則不綁定。預設按鍵已被佔用時不會改動它，`network-revamped doctor` 會說明這一點。
+
+<a id="運作原理"></a>
 
 ## 運作原理
 
-tmux 載入插件時，[`network-revamped.tmux`](network-revamped.tmux) 會執行一次。它將 `status-left` 和 `status-right` 用到的指標記錄到 `@net_revamped_published`，然後將每個佔位符替換為對 [`src/network.sh`](src/network.sh) 的呼叫；在 `options` 模式下則替換為讀取選項，並啟動背景程序。
+tmux 載入插件時，[`network-revamped.tmux`](network-revamped.tmux) 會執行一次。它將 `status-left` 和 `status-right` 用到的指標記錄到 `@net_revamped_published`，然後將每個佔位符替換為對 [`bin/network-revamped`](bin/network-revamped) 的呼叫；在 `options` 模式下則替換為讀取選項，並啟動背景程序。
 
 預設模式下，每個 `#()` 呼叫會即時傳回快取的值。快取超過其間隔時，呼叫會取得鎖並在背景開始更新，因此同一時間只有一個更新在執行。速率等於介面位元組計數器的變化量除以經過的毫秒數。上一次的計數器存放在 tmux 選項中，因此不會寫入任何檔案。
 
 SSID、VPN 名稱、VPN 介面和區域網絡地址在進入狀態列之前，其中每個 `#` 都會加倍，所以名為 `#(cmd)` 的網絡只會顯示為文字，不會被執行。
 
-解析各工具輸出的程式碼位於 [`src/lib/network/network.sh`](src/lib/network/network.sh)，格式化程式碼位於 [`src/lib/network/render.sh`](src/lib/network/render.sh)。
+讀取各工具輸出、取樣和格式化的程式碼位於 [`lib/network.sh`](lib/network.sh)，設定表位於 [`lib/state.sh`](lib/state.sh)。只有狀態列用到的佔位符才會執行對應的探測。時鐘透過 `date` 精確至毫秒，`date` 做不到時改用 perl。
 
-<a id="development"></a>
+<a id="畫面"></a>
+
+## 畫面
+
+<details>
+<summary>所有畫面，在真實的 tmux 中以 <code>make screens</code> 錄製，每個按鍵顯示在狀態列上</summary>
+<br>
+
+<table>
+<tr>
+<td width="50%" valign="top"><img src="screens/speed.png" alt="network-revamped：按級別著色的速率，以及狀態列中的各項探測"><br><sub>按級別著色的速率，以及狀態列中的各項探測，來自 <code>hero.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/popup.png" alt="network-revamped：prefix M-e 開啟詳情彈出視窗"><br><sub><code>prefix M-e</code> 開啟詳情彈出視窗，來自 <code>hero.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/icons.png" alt="network-revamped：將 @net_revamped_icons 設為 nerd，每個指標前都有圖示"><br><sub>將 <code>@net_revamped_icons</code> 設為 <code>nerd</code>，每個指標前都有圖示，來自 <code>hero.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/options.png" alt="network-revamped：在 options 繪製模式下，每個佔位符讀取一個 tmux 選項"><br><sub>在 <code>options</code> 繪製模式下，每個佔位符讀取一個 tmux 選項，來自 <code>hero.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/card.png" alt="network-revamped：card 列印所有數據"><br><sub><code>card</code> 列印所有數據，來自 <code>features.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/precision.png" alt="network-revamped：@net_revamped_precision 設定速率的小數位數"><br><sub><code>@net_revamped_precision</code> 設定速率的小數位數，來自 <code>features.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/format.png" alt="network-revamped：@net_revamped_speed_format 設定速度的格式"><br><sub><code>@net_revamped_speed_format</code> 設定速度的格式，來自 <code>features.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/fixed.png" alt="network-revamped：@net_revamped_fixed_width 將每個值補齊至最闊的形式"><br><sub><code>@net_revamped_fixed_width</code> 將每個值補齊至最闊的形式，來自 <code>features.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/labels.png" alt="network-revamped：為單一指標加上自己的標籤"><br><sub>為單一指標加上自己的標籤，來自 <code>features.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/list.png" alt="network-revamped：list 列印所有綁定"><br><sub><code>list</code> 列印所有綁定，來自 <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/status.png" alt="network-revamped：status speed 列印上下行速率"><br><sub><code>status speed</code> 列印上下行速率，來自 <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/doctor.png" alt="network-revamped：doctor"><br><sub><code>doctor</code>，來自 <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/plain-menu.png" alt="network-revamped：沒有 gum 時的選單"><br><sub>沒有 gum 時的選單，來自 <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/plain-doctor.png" alt="network-revamped：從選單執行 doctor"><br><sub>從選單執行 <code>doctor</code>，來自 <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/version.png" alt="network-revamped：版本"><br><sub>版本，來自 <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/error.png" alt="network-revamped：不明命令"><br><sub>不明命令，來自 <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/accent.png" alt="network-revamped：來自 NETWORK_REVAMPED_ACCENT 的強調色"><br><sub>來自 <code>NETWORK_REVAMPED_ACCENT</code> 的強調色，來自 <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/themes.png" alt="network-revamped：六種主題下的標題"><br><sub>六種主題下的標題，來自 <code>themes.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/help.png" alt="network-revamped：說明頁"><br><sub>說明頁，來自 <code>help.tape</code></sub></td>
+<td width="50%" valign="top"></td>
+</tr>
+</table>
+
+錄製時執行的是真實的插件和 tmux。網絡工具由小腳本代替，所以畫面上的速率和地址來自這些腳本。
+
+</details>
+
+## 可攜性
+
+插件是 POSIX `sh`。CI 在下列每一行上執行全部測試。
+
+| Shell | 狀態 |
+|:------|:-------|
+| `dash`、macOS 上的 `/bin/sh` | 支援 |
+| `bash` 3.2 和 5.x、系統內建的 `zsh` 和 Homebrew 的 `zsh` | 支援 |
+
+| 系統 | 狀態 |
+|:-------|:-------|
+| macOS | Apple Silicon 和 Intel 上的 Tahoe，使用內建的工具、Homebrew 的 GNU 工具和 Homebrew 的 uutils |
+| Linux | x86_64 和 arm64 上的 Ubuntu 26.04，使用 GNU coreutils、uutils 和 BusyBox |
 
 ## 開發
 
-| 指令 | 作用 |
-|:-----|:-----|
-| `make test` | 執行 bats 測試套件 |
-| `make lint` | 對所有 shell 檔案執行 shellcheck |
-| `make coverage` | 在 Linux 上用 kcov 量度行覆蓋率，低於 95% 時失敗 |
+| 指令 | 執行內容 |
+|:--------|:-------------|
+| `make fmt` | 對每個腳本執行 shfmt `-i 2` |
+| `make lint` | shfmt、ShellCheck、mandoc、yamllint 和 actionlint，零警告 |
+| `make test` | 在系統 `sh` 下執行 bats 測試 |
+| `make test-all` | 在每個已安裝的 shell 下執行測試，macOS 上包括 bash 和 zsh 的兩種版本 |
+| `make test-linux` | 在 Ubuntu 容器中執行測試 |
+| `make coverage` | 在這部 Mac 和 Ubuntu 容器中執行 bashcov，合併後以 100% 為門檻 |
+| `make screens` | 以 VHS 在 tmux 中從真實插件錄製上述畫面，在 macOS 上執行 |
+| `make install` | 把指令、man 手冊和自動完成安裝到 `PREFIX` 下 |
 
-變更紀錄見 [CHANGELOG.md](CHANGELOG.md)。
+在 macOS 上，執行 `brew bundle` 會根據 [`Brewfile`](Brewfile) 安裝這些目標用到的所有工具。
 
-<a id="license"></a>
+提交遵循 Conventional Commits 格式，直接進入 `main`。`main` 上的 `ci` 通過後，`release.yml` 會執行 semantic-release：自上一個標籤以來的每個 `feat` 或 `fix` 都會發佈新版本，更新版本常數，並把說明寫入 [`CHANGELOG.md`](CHANGELOG.md)。
 
 ## 授權
 
-[MIT](LICENSE)
+[MIT](LICENSE)，copyright Gustavo Franco。
 
 <!-- family:begin -->
 

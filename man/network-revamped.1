@@ -1,0 +1,319 @@
+.TH NETWORK-REVAMPED 1 "2026-11-17" "network-revamped" "User Commands"
+.SH NAME
+network-revamped \- network throughput in the tmux status bar
+.SH SYNOPSIS
+.B network-revamped
+.RI [ options ]
+.I command
+.RI [ name ]
+.SH DESCRIPTION
+.B network-revamped
+shows the download and upload rates of one interface in the tmux status
+line, with its LAN and public addresses, the VPN, the Wi\-Fi name and signal,
+the count of connections, the latency and whether the internet is in reach.
+The rate is the change in the interface's byte counters over the
+milliseconds passed.
+.PP
+The entry point
+.B network-revamped.tmux
+runs
+.B apply
+once when tmux loads the plugin, which binds the popup key in one tmux call
+and replaces the placeholders #{net_download}, #{net_upload}, #{net_speed},
+#{net_fg_color}, #{net_bg_color}, #{net_vpn}, #{net_vpn_name}, #{net_ip},
+#{net_wifi}, #{net_ssid}, #{net_connections}, #{net_ping}, #{net_public_ip}
+and #{net_online} in status-left and status-right.
+.PP
+A status call prints the stored reading at once. When the rates are older
+than the interval it starts one sample in the background, so the status line
+never waits. A probe runs only for a placeholder the status line uses, each
+at its own interval, and the three that call out stay off until their
+options turn them on. Run with no command on a terminal, the tool offers a
+menu.
+.SH COMMANDS
+.TP
+.B apply
+Bind the popup key and replace the status placeholders now. In the options render mode it also starts the daemon.
+.TP
+.B list
+Print every tmux command apply would send, one per line, and change nothing.
+.TP
+.B status
+Print one placeholder from the stored reading: download, upload, speed, fg_color, bg_color, vpn, vpn_name, ip, wifi, ssid, connections, ping, public_ip or online. The status line runs it, and it starts a sample in the background when the stored rates are older than the interval.
+.TP
+.B refresh
+Sample the network now, run the probes the status line uses, store the reading and say what moves.
+.TP
+.B card
+Read everything now and print one row per reading: the interface, both rates, the addresses, the VPN, the Wi-Fi, the connections, the latency and reachability. A probe that calls out and is off is named as off.
+.TP
+.B popup
+Open the card in a tmux popup that closes on Enter. The popup key runs it. It needs tmux 3.2 or later.
+.TP
+.B daemon
+Sample the network and publish every placeholder the status line uses, once per interval, until another daemon takes over or the tmux server ends. apply starts it in the options render mode.
+.TP
+.B doctor
+Print one row per dependency: tmux, each tool or file a reading comes from, how finely the clock counts, the key it found bound, gum and the core tools. Exits 1 only when a required tool is missing.
+.TP
+.B version
+Print the version, then the tmux version.
+.TP
+.B help
+Print the help page.
+.SH OPTIONS
+.TP
+.B \-\-json
+.B list
+prints one JSON object.
+.TP
+.BI \-\-theme " name"
+Colours of the terminal interface:
+.BR kodougu ,
+.BR catppuccin\-mocha ,
+.BR catppuccin\-latte ,
+.BR dracula ,
+.BR nord ,
+.BR gruvbox ,
+.B tokyo\-night
+or
+.BR mono .
+The default is
+.BR kodougu .
+.TP
+.BI \-\- setting " value"
+Any tmux option below, named with dashes, such as
+.B \-\-interval
+or
+.BR \-\-vpn\-name\-label .
+It also takes the form
+.IR \-\-setting = value ,
+and outranks the environment and the tmux option. Given to
+.BR apply ,
+it rides on the popup key and on every status call.
+.SH ENVIRONMENT
+.TP
+.BI NETWORK_REVAMPED_ SETTING
+Any tmux option below in capitals, such as
+.BR NETWORK_REVAMPED_INTERVAL .
+It outranks the tmux option.
+.TP
+.B NETWORK_REVAMPED_THEME
+The theme when
+.B \-\-theme
+is not given.
+.TP
+.B NETWORK_REVAMPED_ACCENT
+A colour such as #CBA6F7 that replaces the accent of the theme.
+.TP
+.B KODOUGU_THEME
+The theme of every kodougu and tmux-revamped tool, when neither
+.B \-\-theme
+nor
+.B NETWORK_REVAMPED_THEME
+is set.
+.TP
+.B KODOUGU_ACCENT
+The accent of every kodougu and tmux-revamped tool, when
+.B NETWORK_REVAMPED_ACCENT
+is not set.
+.TP
+.B NO_COLOR
+Turns colour off in every theme.
+.SH TMUX OPTIONS
+An empty tmux option means its default. A key set to off binds nothing.
+.TP
+.B @net_revamped_popup_key
+The prefix key that opens the detail popup. off binds nothing. The default is M\-e, left alone when someone else holds it.
+.TP
+.B @net_revamped_interface
+The interface to measure. Empty follows the default route. The default is none.
+.TP
+.B @net_revamped_interval
+Seconds a rate sample stays fresh before the counters are read again. The default is 2.
+.TP
+.B @net_revamped_precision
+Decimal places of a rate, 0 to 9. A rate that rounds to 1000 or more moves up a unit, through TB/s. The default is 1.
+.TP
+.B @net_revamped_smoothing
+Weight in percent, 1 to 99, of the previous rate in a moving average. 0 shows each sample. The default is 0.
+.TP
+.B @net_revamped_render
+jobs turns each placeholder into a call the status line runs. options turns it into a read of a tmux option that the daemon fills, so a status refresh starts no process. The default is jobs.
+.TP
+.B @net_revamped_ping_enabled
+1 pings 8.8.8.8 for #{net_ping}. The default is 0.
+.TP
+.B @net_revamped_public_ip_enabled
+1 asks icanhazip.com for the public address. The default is 0.
+.TP
+.B @net_revamped_online_enabled
+1 requests www.gstatic.com/generate_204 with curl, or pings when curl is missing. The default is 0.
+.TP
+.B @net_revamped_vpn_interval
+Seconds between VPN link probes. The default is 30.
+.TP
+.B @net_revamped_vpn_name_interval
+Seconds between VPN name probes. The default is 30.
+.TP
+.B @net_revamped_ip_interval
+Seconds between LAN address probes. The default is 30.
+.TP
+.B @net_revamped_connections_interval
+Seconds between connection counts. The default is 30.
+.TP
+.B @net_revamped_wifi_interval
+Seconds between Wi-Fi signal probes. The default is 30.
+.TP
+.B @net_revamped_ssid_interval
+Seconds between Wi-Fi name probes. The default is 30.
+.TP
+.B @net_revamped_online_interval
+Seconds between reachability probes. The default is 30.
+.TP
+.B @net_revamped_ping_interval
+Seconds between pings. The default is 15.
+.TP
+.B @net_revamped_public_ip_interval
+Seconds between public address fetches. The default is 300.
+.TP
+.B @net_revamped_speed_format
+The printf format for download, then upload, in #{net_speed}. The default is %s %s.
+.TP
+.B @net_revamped_ping_format
+The printf format for the latency. The default is %sms.
+.TP
+.B @net_revamped_wifi_format
+The printf format for the Wi\-Fi signal. The default is %sdBm.
+.TP
+.B @net_revamped_online_up_text
+What #{net_online} prints when the probe page answers. The default is on.
+.TP
+.B @net_revamped_online_down_text
+What #{net_online} prints when it does not, shown only while the probe is on. The default is off.
+.TP
+.B @net_revamped_icons
+nerd puts a Nerd Font glyph before every metric. ascii adds none. The default is ascii.
+.TP
+.B @net_revamped_fixed_width
+on pads a rate and the latency on the left to their widest form, so the status line does not shift. The default is off.
+.TP
+.B @net_revamped_download_label
+The label printed before the download rate, only when it has a value. The default is none.
+.TP
+.B @net_revamped_upload_label
+The label printed before the upload rate, only when it has a value. The default is none.
+.TP
+.B @net_revamped_speed_label
+The label printed before both rates, only when it has a value. The default is none.
+.TP
+.B @net_revamped_vpn_label
+The label printed before the VPN link, only when it has a value. The default is none.
+.TP
+.B @net_revamped_vpn_name_label
+The label printed before the VPN name, only when it has a value. The default is none.
+.TP
+.B @net_revamped_ip_label
+The label printed before the LAN address, only when it has a value. The default is none.
+.TP
+.B @net_revamped_wifi_label
+The label printed before the Wi-Fi signal, only when it has a value. The default is none.
+.TP
+.B @net_revamped_ssid_label
+The label printed before the Wi-Fi name, only when it has a value. The default is none.
+.TP
+.B @net_revamped_connections_label
+The label printed before the connection count, only when it has a value. The default is none.
+.TP
+.B @net_revamped_ping_label
+The label printed before the latency, only when it has a value. The default is none.
+.TP
+.B @net_revamped_public_ip_label
+The label printed before the public address, only when it has a value. The default is none.
+.TP
+.B @net_revamped_online_label
+The label printed before the reachability text, only when it has a value. The default is none.
+.TP
+.B @net_revamped_download_width
+The width the download rate is padded to on the left. It wins over the fixed width, and a longer value is never cut. The default is none.
+.TP
+.B @net_revamped_upload_width
+The width the upload rate is padded to on the left. It wins over the fixed width, and a longer value is never cut. The default is none.
+.TP
+.B @net_revamped_speed_width
+The width both rates is padded to on the left. It wins over the fixed width, and a longer value is never cut. The default is none.
+.TP
+.B @net_revamped_vpn_width
+The width the VPN link is padded to on the left. It wins over the fixed width, and a longer value is never cut. The default is none.
+.TP
+.B @net_revamped_vpn_name_width
+The width the VPN name is padded to on the left. It wins over the fixed width, and a longer value is never cut. The default is none.
+.TP
+.B @net_revamped_ip_width
+The width the LAN address is padded to on the left. It wins over the fixed width, and a longer value is never cut. The default is none.
+.TP
+.B @net_revamped_wifi_width
+The width the Wi-Fi signal is padded to on the left. It wins over the fixed width, and a longer value is never cut. The default is none.
+.TP
+.B @net_revamped_ssid_width
+The width the Wi-Fi name is padded to on the left. It wins over the fixed width, and a longer value is never cut. The default is none.
+.TP
+.B @net_revamped_connections_width
+The width the connection count is padded to on the left. It wins over the fixed width, and a longer value is never cut. The default is none.
+.TP
+.B @net_revamped_ping_width
+The width the latency is padded to on the left. It wins over the fixed width, and a longer value is never cut. The default is none.
+.TP
+.B @net_revamped_public_ip_width
+The width the public address is padded to on the left. It wins over the fixed width, and a longer value is never cut. The default is none.
+.TP
+.B @net_revamped_online_width
+The width the reachability text is padded to on the left. It wins over the fixed width, and a longer value is never cut. The default is none.
+.TP
+.B @net_revamped_medium_thresh
+Download plus upload, in KB/s, that starts the medium tier. The default is 100.
+.TP
+.B @net_revamped_high_thresh
+Download plus upload, in KB/s, that starts the high tier. The default is 1000.
+.TP
+.B @net_revamped_low_fg_color
+The style #{net_fg_color} prints in the low tier. The default is none.
+.TP
+.B @net_revamped_medium_fg_color
+The style #{net_fg_color} prints in the medium tier. The default is none.
+.TP
+.B @net_revamped_high_fg_color
+The style #{net_fg_color} prints in the high tier. The default is none.
+.TP
+.B @net_revamped_low_bg_color
+The style #{net_bg_color} prints in the low tier. The default is none.
+.TP
+.B @net_revamped_medium_bg_color
+The style #{net_bg_color} prints in the medium tier. The default is none.
+.TP
+.B @net_revamped_high_bg_color
+The style #{net_bg_color} prints in the high tier. The default is none.
+.TP
+.B @revamped_theme
+The theme of every tmux-revamped tool, when nothing else sets one. The default
+is
+.BR kodougu .
+.PP
+The stored reading lives in
+.BR @net_revamped_download ,
+.BR _upload ,
+.BR _total ,
+the previous counters and their time, and one option per probe with its
+time. apply records the placeholders the status line uses in
+.BR @net_revamped_published ,
+the daemon writes each one to
+.BI @net_revamped_out_ name
+and keeps its process id in
+.BR @net_revamped_ticker_pid .
+.SH EXIT STATUS
+0 on success, 1 on any failure.
+.SH SEE ALSO
+.BR tmux (1),
+.BR netstat (1),
+.BR ip (8),
+.BR gum (1)

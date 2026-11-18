@@ -1,0 +1,527 @@
+#!/bin/sh
+[ -n "${ZSH_VERSION:-}" ] && emulate sh
+set -eu
+
+network_revamped_self="$0"
+case "${network_revamped_self}" in
+*/*) ;;
+*) network_revamped_self="$(command -v -- "${network_revamped_self}")" ;;
+esac
+network_revamped_lib="$(cd "${network_revamped_self%/*}/../lib" && pwd)" || exit 1
+
+for network_revamped_inherited in $(env | sed -n -e 's/^\(REVAMPED_[A-Za-z0-9_]*\)=.*/\1/p' -e 's/^\(NETWORK_REVAMPED_[A-Za-z0-9_]*_LOADED\)=.*/\1/p'); do
+  case "${network_revamped_inherited}" in
+  REVAMPED_TEST_*) continue ;;
+  *) unset "${network_revamped_inherited}" ;;
+  esac
+done
+
+REVAMPED_LIB="${network_revamped_lib}"
+# shellcheck source=SCRIPTDIR/../lib/core.sh
+. "${REVAMPED_LIB}/core.sh"
+# shellcheck source=SCRIPTDIR/../lib/network.sh
+. "${REVAMPED_LIB}/network.sh"
+
+network_revamped_interface() {
+  # shellcheck disable=SC2034
+  REVAMPED_UI_NAME=network-revamped REVAMPED_UI_VERSION="${NETWORK_REVAMPED_VERSION}" REVAMPED_UI_TAGLINE="network throughput in the status bar"
+  if [ -n "${NETWORK_REVAMPED_ACCENT:-}" ]; then
+    # shellcheck disable=SC2034
+    REVAMPED_UI_ACCENT_CHOICE="${NETWORK_REVAMPED_ACCENT}" REVAMPED_UI_ACCENT_NAME=NETWORK_REVAMPED_ACCENT
+  fi
+  # shellcheck source=SCRIPTDIR/../lib/cli.sh
+  . "${REVAMPED_LIB}/cli.sh"
+  # shellcheck source=SCRIPTDIR/../lib/doctor.sh
+  . "${REVAMPED_LIB}/doctor.sh"
+}
+
+network_revamped_usage() {
+  network_revamped_interface
+  revamped_cli_usage_error "$1"
+}
+
+network_revamped_bad() {
+  network_revamped_interface
+  revamped_cli_die "$1"
+}
+
+network_revamped_help() {
+  revamped_cli_help_page <<'HELP'
+network-revamped - network throughput in the status bar
+
+usage:
+  network-revamped apply          bind the key and fill the placeholders
+  network-revamped list           print what apply would send to tmux
+  network-revamped status NAME    print one placeholder: download, upload,
+                                  speed, fg_color, bg_color, vpn, vpn_name,
+                                  ip, wifi, ssid, connections, ping,
+                                  public_ip or online
+  network-revamped refresh        sample the network now for the status line
+  network-revamped card           print every reading as a table
+  network-revamped popup          open the card in a tmux popup
+  network-revamped daemon         publish the placeholders on every tick, for
+                                  the options render mode
+  network-revamped doctor         check this machine
+  network-revamped version        print the version
+  network-revamped help           print this page
+
+keys:
+  --popup-key KEY            the prefix key for the detail popup, or off
+
+sampling:
+  --interface NAME           the interface to measure; empty follows the
+                             default route
+  --interval SECONDS         how long a rate sample stays fresh
+  --precision DIGITS         decimal places of a rate, 0 to 9
+  --smoothing PERCENT        weight of the previous rate in a moving
+                             average, 1 to 99; 0 shows each sample
+  --render MODE              jobs or options
+
+probes:
+  --ping-enabled 0|1         1 pings 8.8.8.8
+  --public-ip-enabled 0|1    1 asks icanhazip.com for the public address
+  --online-enabled 0|1       1 requests www.gstatic.com/generate_204, or
+                             pings when curl is missing
+  --PROBE-interval SECONDS   how long one probe stays fresh: vpn, vpn-name,
+                             ip, connections, wifi, ssid, online, ping or
+                             public-ip
+
+formats:
+  --speed-format FORMAT      printf format for download, then upload
+  --ping-format FORMAT       printf format for the latency
+  --wifi-format FORMAT       printf format for the signal
+  --online-up-text TEXT      what #{net_online} prints when reachable
+  --online-down-text TEXT    what it prints when not reachable
+  --icons SET                ascii, or nerd for a Nerd Font glyph before
+                             every metric
+  --METRIC-label TEXT        the label before one metric
+  --fixed-width on|off       on pads every value to its widest form
+  --METRIC-width COUNT       the width of one metric
+
+tiers:
+  --medium-thresh KBPS       download plus upload that starts the medium tier
+  --high-thresh KBPS         download plus upload that starts the high tier
+  --TIER-fg-color STYLE      what #{net_fg_color} prints in the low, medium
+                             or high tier
+  --TIER-bg-color STYLE      what #{net_bg_color} prints in each tier
+
+output:
+  --json                     list prints one JSON object
+  --theme NAME               the look: kodougu, catppuccin-mocha,
+                             catppuccin-latte, dracula, nord, gruvbox,
+                             tokyo-night or mono
+
+environment:
+  NETWORK_REVAMPED_<SETTING>   the same as the option of that name, such as
+                               NETWORK_REVAMPED_INTERVAL for --interval
+  NETWORK_REVAMPED_THEME       the look, when --theme is not given
+  NETWORK_REVAMPED_ACCENT      a colour such as #CBA6F7 for the accent
+  KODOUGU_THEME                the family look, when neither is given
+  KODOUGU_ACCENT               the family accent, when the tool's is unset
+  NO_COLOR                     turn colour off
+
+tmux options:
+  @net_revamped_popup_key            the detail popup key (default M-e)
+  @net_revamped_interface            interface to measure (default none,
+                                     the default route)
+  @net_revamped_interval             seconds a rate stays fresh (default 2)
+  @net_revamped_precision            decimal places of a rate (default 1)
+  @net_revamped_smoothing            percent of the previous rate kept
+                                     (default 0)
+  @net_revamped_render               jobs or options (default jobs)
+  @net_revamped_ping_enabled         1 turns the ping probe on (default 0)
+  @net_revamped_public_ip_enabled    1 turns the public address probe on
+                                     (default 0)
+  @net_revamped_online_enabled       1 turns the reachability probe on
+                                     (default 0)
+  @net_revamped_vpn_interval         seconds between VPN link probes
+                                     (default 30)
+  @net_revamped_vpn_name_interval    seconds between VPN name probes
+                                     (default 30)
+  @net_revamped_ip_interval          seconds between LAN address probes
+                                     (default 30)
+  @net_revamped_connections_interval seconds between connection counts
+                                     (default 30)
+  @net_revamped_wifi_interval        seconds between signal probes
+                                     (default 30)
+  @net_revamped_ssid_interval        seconds between Wi-Fi name probes
+                                     (default 30)
+  @net_revamped_online_interval      seconds between reachability probes
+                                     (default 30)
+  @net_revamped_ping_interval        seconds between pings (default 15)
+  @net_revamped_public_ip_interval   seconds between public address
+                                     fetches (default 300)
+  @net_revamped_speed_format         format of #{net_speed}
+                                     (default "%s %s")
+  @net_revamped_ping_format          format of #{net_ping} (default "%sms")
+  @net_revamped_wifi_format          format of #{net_wifi}
+                                     (default "%sdBm")
+  @net_revamped_online_up_text       text when reachable (default on)
+  @net_revamped_online_down_text     text when not reachable (default off)
+  @net_revamped_icons                ascii or nerd (default ascii)
+  @net_revamped_fixed_width          on or off (default off)
+  @net_revamped_<metric>_label       label before one metric (default none)
+  @net_revamped_<metric>_width       width of one metric (default none)
+  @net_revamped_medium_thresh        KB/s that starts the medium tier
+                                     (default 100)
+  @net_revamped_high_thresh          KB/s that starts the high tier
+                                     (default 1000)
+  @net_revamped_<tier>_fg_color      style of #{net_fg_color} in the low,
+                                     medium or high tier (default none)
+  @net_revamped_<tier>_bg_color      style of #{net_bg_color} in each tier
+                                     (default none)
+  @revamped_theme                    the family look (default kodougu)
+
+notes:
+  A metric is download, upload, speed, vpn, vpn_name, ip, wifi, ssid,
+  connections, ping, public_ip or online, written with dashes in an option,
+  such as --vpn-name-label. The placeholders are #{net_<metric>},
+  #{net_fg_color} and #{net_bg_color}. Each prints the stored reading at
+  once, and starts one background sample when the rates are older than the
+  interval. A probe runs only for a placeholder the status line uses. With
+  --render options each placeholder reads a tmux option that a background
+  process fills on every tick, so a status refresh starts no process.
+
+examples:
+  network-revamped status speed
+  network-revamped card
+  network-revamped --icons nerd --fixed-width on apply
+  network-revamped list --json
+HELP
+}
+
+network_revamped_show_version() {
+  network_revamped_show_version_tmux=$(tmux -V 2>/dev/null) || network_revamped_show_version_tmux=missing
+  printf '%s %s\n' network-revamped "${NETWORK_REVAMPED_VERSION}"
+  printf 'tmux: %s\n' "${network_revamped_show_version_tmux#tmux }"
+}
+
+network_revamped_doctor_source() {
+  network_revamped_doctor_source_path=$(command -v "$1" 2>/dev/null) || network_revamped_doctor_source_path=""
+  if [ -n "${network_revamped_doctor_source_path}" ]; then
+    revamped_doctor_line "$1" ok "${network_revamped_doctor_source_path}, $2"
+    return 0
+  fi
+  revamped_doctor_line "$1" warn "$3"
+}
+
+network_revamped_doctor_file() {
+  if cat "$2" >/dev/null 2>&1; then
+    revamped_doctor_line "$1" ok "$2, $3"
+    return 0
+  fi
+  revamped_doctor_line "$1" warn "$4"
+}
+
+network_revamped_doctor_macos() {
+  network_revamped_doctor_source route "names the interface of the default route" "without it no interface is found, so set @net_revamped_interface"
+  network_revamped_doctor_source netstat "reads the byte counters, the VPN routes and the connections" "without it the rates, the VPN link and the connections stay empty"
+  network_revamped_doctor_source ipconfig "reads the LAN address" "without it the LAN address stays empty"
+  network_revamped_doctor_source scutil "names the connected VPN" "without it the VPN name stays empty"
+  network_revamped_doctor_source system_profiler "reads the Wi-Fi name and signal" "without it the Wi-Fi name and signal stay empty"
+}
+
+network_revamped_doctor_connections() {
+  if revamped_has_command netstat; then
+    network_revamped_doctor_source netstat "counts the established connections" ""
+    return 0
+  fi
+  network_revamped_doctor_source ss "counts the established connections" "neither netstat nor ss is installed, so the connections stay empty: apt install iproute2"
+}
+
+network_revamped_doctor_ssid() {
+  if revamped_has_command iwgetid; then
+    network_revamped_doctor_source iwgetid "reads the Wi-Fi name" ""
+    return 0
+  fi
+  network_revamped_doctor_source iw "reads the Wi-Fi name" "neither iwgetid nor iw is installed, so the Wi-Fi name stays empty: apt install iw"
+}
+
+network_revamped_doctor_linux() {
+  network_revamped_doctor_source ip "names the interface of the default route, the VPN link and the LAN address" "without it no interface, VPN link or LAN address is found: apt install iproute2"
+  network_revamped_doctor_file counters /proc/net/dev "holds the byte counters" "/proc/net/dev cannot be read, so the rates stay empty"
+  network_revamped_doctor_connections
+  network_revamped_doctor_source nmcli "names the connected VPN" "without it the VPN name stays empty"
+  network_revamped_doctor_file wireless /proc/net/wireless "holds the Wi-Fi signal" "/proc/net/wireless cannot be read, so the Wi-Fi signal stays empty"
+  network_revamped_doctor_ssid
+}
+
+network_revamped_doctor_clock() {
+  network_revamped_doctor_clock_raw=$(date +%s%N 2>/dev/null) || network_revamped_doctor_clock_raw=""
+  case "${network_revamped_doctor_clock_raw}" in
+  *[!0-9]* | '') network_revamped_doctor_clock_coarse ;;
+  ????????????????*) revamped_doctor_line clock ok "date counts nanoseconds, so a rate is exact to the millisecond" ;;
+  *) network_revamped_doctor_clock_coarse ;;
+  esac
+}
+
+network_revamped_doctor_clock_coarse() {
+  if revamped_has_command perl; then
+    network_revamped_doctor_clock_coarse_path=$(command -v perl)
+    revamped_doctor_line clock ok "${network_revamped_doctor_clock_coarse_path}, counts milliseconds where date cannot"
+    return 0
+  fi
+  revamped_doctor_line clock warn "date counts whole seconds and perl is missing, so a rate can be off by a second of traffic"
+}
+
+network_revamped_doctor_keys() {
+  if [ -n "${NETWORK_REVAMPED_SKIPPED}" ]; then
+    revamped_doctor_line keys warn "already bound and left alone: ${NETWORK_REVAMPED_SKIPPED}"
+    return 0
+  fi
+  revamped_doctor_line keys ok "every key it binds is free or its own"
+}
+
+network_revamped_doctor() {
+  network_revamped_plan
+  revamped_doctor_tmux
+  if revamped_is_macos; then
+    network_revamped_doctor_macos
+  else
+    network_revamped_doctor_linux
+  fi
+  network_revamped_doctor_source ping "measures the latency when @net_revamped_ping_enabled is 1" "without it the latency stays empty"
+  network_revamped_doctor_source curl "fetches the public address and tests reachability when their options are 1" "without it the public address stays empty and reachability falls back to ping"
+  network_revamped_doctor_clock
+  network_revamped_doctor_keys
+  revamped_doctor_gum
+  revamped_doctor_core_tools awk sed tr date cat
+  revamped_doctor_finish
+  [ "${REVAMPED_DOCTOR_MISSING}" -eq 0 ] || exit 1
+}
+
+network_revamped_list() {
+  network_revamped_plan
+  if [ -n "${network_revamped_json}" ]; then
+    network_revamped_json
+    return 0
+  fi
+  network_revamped_lines
+}
+
+network_revamped_apply_command() {
+  network_revamped_apply
+  network_revamped_apply_command_sent=$(network_revamped_bindings)
+  case "${network_revamped_apply_command_sent}" in
+  1) printf 'Applied. 1 key is bound.\n' ;;
+  *) printf 'Applied. %s keys are bound.\n' "${network_revamped_apply_command_sent}" ;;
+  esac
+}
+
+network_revamped_read_all() {
+  network_revamped_load
+  NETWORK_REVAMPED_WANT="${NETWORK_REVAMPED_S_published}"
+  [ "$1" != all ] || NETWORK_REVAMPED_WANT="${NETWORK_REVAMPED_METRICS}"
+  network_revamped_refresh
+  [ "${NETWORK_REVAMPED_STORED}" = 1 ] || network_revamped_bad "no tmux server is running, so the reading has nowhere to go"
+}
+
+network_revamped_refresh_command() {
+  network_revamped_read_all published
+  if [ -z "${NETWORK_REVAMPED_S_download}" ]; then
+    printf 'Refreshed. No interface with byte counters was found.\n'
+    return 0
+  fi
+  printf 'Refreshed. %s moves %s down and %s up.\n' "${NETWORK_REVAMPED_IFACE}" "${NETWORK_REVAMPED_S_download}" "${NETWORK_REVAMPED_S_upload}"
+}
+
+network_revamped_card_row() {
+  NETWORK_REVAMPED_CARD="${NETWORK_REVAMPED_CARD}$1	${2:--}
+"
+}
+
+network_revamped_card_probe() {
+  if [ "$2" != 1 ]; then
+    network_revamped_card_row "$1" "off, set $4 to 1"
+    return 0
+  fi
+  network_revamped_card_row "$1" "$3"
+}
+
+network_revamped_card_rows() {
+  NETWORK_REVAMPED_CARD=""
+  network_revamped_card_row Interface "${NETWORK_REVAMPED_IFACE}"
+  network_revamped_card_row Download "${NETWORK_REVAMPED_S_download}"
+  network_revamped_card_row Upload "${NETWORK_REVAMPED_S_upload}"
+  network_revamped_card_row "LAN address" "${NETWORK_REVAMPED_S_ip}"
+  network_revamped_card_probe "Public address" "${NETWORK_REVAMPED_S_public_ip_enabled}" "${NETWORK_REVAMPED_S_public_ip}" @net_revamped_public_ip_enabled
+  network_revamped_card_row "VPN link" "${NETWORK_REVAMPED_S_vpn}"
+  network_revamped_card_row "VPN name" "${NETWORK_REVAMPED_S_vpn_name}"
+  network_revamped_card_row "Wi-Fi name" "${NETWORK_REVAMPED_S_ssid}"
+  network_revamped_card_row "Wi-Fi signal" "${NETWORK_REVAMPED_S_wifi:+${NETWORK_REVAMPED_S_wifi} dBm}"
+  network_revamped_card_row Connections "${NETWORK_REVAMPED_S_connections}"
+  network_revamped_card_probe Latency "${NETWORK_REVAMPED_S_ping_enabled}" "${NETWORK_REVAMPED_S_ping:+${NETWORK_REVAMPED_S_ping} ms}" @net_revamped_ping_enabled
+  network_revamped_card_online="unreachable"
+  [ "${NETWORK_REVAMPED_S_online}" != up ] || network_revamped_card_online="reachable"
+  network_revamped_card_probe Internet "${NETWORK_REVAMPED_S_online_enabled}" "${network_revamped_card_online}" @net_revamped_online_enabled
+}
+
+network_revamped_card() {
+  network_revamped_read_all all
+  network_revamped_card_rows
+  network_revamped_card_closing="Read. No interface carries the default route."
+  [ -z "${NETWORK_REVAMPED_IFACE}" ] || network_revamped_card_closing="Read. ${NETWORK_REVAMPED_IFACE} is the measured interface."
+  if revamped_ui_out; then
+    printf 'Reading\tValue\n%s' "${NETWORK_REVAMPED_CARD}" | revamped_ui_table
+    revamped_ui_done "${network_revamped_card_closing}"
+    return 0
+  fi
+  printf '%s' "${NETWORK_REVAMPED_CARD}" | awk -F '\t' '{ printf "%-18s %s\n", $1, $2 }'
+  printf '%s\n' "${network_revamped_card_closing}"
+}
+
+network_revamped_status_command() {
+  case " ${NETWORK_REVAMPED_METRICS} " in
+  *" ${1:-} "*) network_revamped_status "$1" ;;
+  *) network_revamped_status_refused "${1:-}" ;;
+  esac
+}
+
+network_revamped_status_refused() {
+  [ -n "$1" ] || network_revamped_usage "no placeholder given"
+  network_revamped_bad "status must be download, upload, speed, fg_color, bg_color, vpn, vpn_name, ip, wifi, ssid, connections, ping, public_ip or online, got: $1"
+}
+
+network_revamped_daemon_command() {
+  set +e
+  network_revamped_daemon
+  network_revamped_daemon_command_ended=$?
+  set -e
+  [ "${network_revamped_daemon_command_ended}" -ne 0 ] || exec "${network_revamped_self}" daemon
+}
+
+network_revamped_start_menu() {
+  revamped_cli_require_terminal
+  network_revamped_start_menu_choice=$(revamped_cli_menu "Show the network now" "List the bindings" "Apply them now" "Check this machine" "Help")
+  case "${network_revamped_start_menu_choice}" in
+  "Show the network now") network_revamped_card ;;
+  "List the bindings") network_revamped_list ;;
+  "Apply them now") network_revamped_apply_command ;;
+  "Check this machine") network_revamped_doctor ;;
+  *) network_revamped_help ;;
+  esac
+}
+
+network_revamped_dispatch() {
+  case "${1:-}" in
+  doctor) network_revamped_doctor ;;
+  version | --version | -V) network_revamped_show_version ;;
+  help | --help | -h) network_revamped_help ;;
+  list) network_revamped_list ;;
+  card) network_revamped_card ;;
+  refresh) network_revamped_refresh_command ;;
+  "") network_revamped_start_menu ;;
+  *) revamped_cli_usage_error "unknown command '$1'" ;;
+  esac
+}
+
+network_revamped_known() {
+  [ "$1" != --theme ] || return 0
+  network_revamped_known_name=$(network_revamped_setting_name "$1")
+  [ -n "${network_revamped_known_name}" ] || network_revamped_usage "unknown option '$1'"
+}
+
+network_revamped_set() {
+  network_revamped_set_upper=$(printf '%s\n' "$1" | tr '[:lower:]' '[:upper:]')
+  export "NETWORK_REVAMPED_${network_revamped_set_upper}=$2"
+}
+
+network_revamped_option() {
+  network_revamped_option_name=$(network_revamped_setting_name "$1")
+  [ -n "${network_revamped_option_name}" ] || network_revamped_usage "unknown option '$1'"
+  network_revamped_set "${network_revamped_option_name}" "$2"
+}
+
+network_revamped_check_switch() {
+  case "$2" in
+  0 | 1) return 0 ;;
+  *) network_revamped_bad "--$1 must be 0 or 1, got: $2" ;;
+  esac
+}
+
+network_revamped_check_numbers() {
+  network_revamped_check_numbers_bad=$(env | awk -F '=' '$1 ~ /^NETWORK_REVAMPED_(INTERVAL|[A-Z_]+_INTERVAL|[A-Z_]+_WIDTH|[A-Z_]+_THRESH)$/ && $1 != "NETWORK_REVAMPED_FIXED_WIDTH" { value = substr($0, length($1) + 2); if (value != "" && value !~ /^[0-9]+$/) { name = tolower(substr($1, 18)); gsub(/_/, "-", name); print name "=" value; exit } }')
+  [ -z "${network_revamped_check_numbers_bad}" ] || network_revamped_bad "--${network_revamped_check_numbers_bad%%=*} must be a whole number, got: ${network_revamped_check_numbers_bad#*=}"
+}
+
+network_revamped_check_choices() {
+  case "${NETWORK_REVAMPED_PRECISION-1}" in
+  [0-9]) : ;;
+  *) network_revamped_bad "--precision must be a digit from 0 to 9, got: ${NETWORK_REVAMPED_PRECISION}" ;;
+  esac
+  case "${NETWORK_REVAMPED_SMOOTHING-0}" in
+  [0-9] | [1-9][0-9]) : ;;
+  *) network_revamped_bad "--smoothing must be a whole number from 0 to 99, got: ${NETWORK_REVAMPED_SMOOTHING}" ;;
+  esac
+  case "${NETWORK_REVAMPED_ICONS-ascii}" in
+  ascii | nerd) : ;;
+  *) network_revamped_bad "--icons must be ascii or nerd, got: ${NETWORK_REVAMPED_ICONS}" ;;
+  esac
+  case "${NETWORK_REVAMPED_FIXED_WIDTH-off}" in
+  on | off) : ;;
+  *) network_revamped_bad "--fixed-width must be on or off, got: ${NETWORK_REVAMPED_FIXED_WIDTH}" ;;
+  esac
+  case "${NETWORK_REVAMPED_RENDER-jobs}" in
+  jobs | options) return 0 ;;
+  *) network_revamped_bad "--render must be jobs or options, got: ${NETWORK_REVAMPED_RENDER}" ;;
+  esac
+}
+
+network_revamped_check() {
+  network_revamped_check_numbers
+  network_revamped_check_switch ping-enabled "${NETWORK_REVAMPED_PING_ENABLED-0}"
+  network_revamped_check_switch public-ip-enabled "${NETWORK_REVAMPED_PUBLIC_IP_ENABLED-0}"
+  network_revamped_check_switch online-enabled "${NETWORK_REVAMPED_ONLINE_ENABLED-0}"
+  network_revamped_check_choices
+}
+
+network_revamped_main() {
+  network_revamped_theme="${NETWORK_REVAMPED_THEME:-}" network_revamped_json="" network_revamped_left=$# network_revamped_rest=0
+  while [ "${network_revamped_left}" -gt 0 ]; do
+    network_revamped_arg="$1"
+    shift
+    network_revamped_left=$((network_revamped_left - 1))
+    case "${network_revamped_rest}:${network_revamped_arg}" in
+    1:*) set -- "$@" "${network_revamped_arg}" ;;
+    0:--) network_revamped_rest=1 ;;
+    0:--json) network_revamped_json=1 ;;
+    0:-h | 0:-V | 0:--help | 0:--version) set -- "$@" "${network_revamped_arg}" ;;
+    0:--theme=*) network_revamped_theme="${network_revamped_arg#--theme=}" ;;
+    0:--*=*) network_revamped_option "${network_revamped_arg%%=*}" "${network_revamped_arg#*=}" ;;
+    0:--*)
+      network_revamped_known "${network_revamped_arg}"
+      [ "${network_revamped_left}" -gt 0 ] || network_revamped_usage "option '${network_revamped_arg}' needs a value"
+      if [ "${network_revamped_arg}" = --theme ]; then
+        network_revamped_theme="$1"
+      else
+        network_revamped_option "${network_revamped_arg}" "$1"
+      fi
+      shift
+      network_revamped_left=$((network_revamped_left - 1))
+      ;;
+    0:-?*) network_revamped_usage "unknown option '${network_revamped_arg}'" ;;
+    *) set -- "$@" "${network_revamped_arg}" ;;
+    esac
+  done
+  network_revamped_check
+  network_revamped_run "${network_revamped_theme}" "$@"
+}
+
+network_revamped_run() {
+  network_revamped_run_theme="$1"
+  shift
+  [ -z "${network_revamped_json}" ] || [ "${1:-}" = list ] || network_revamped_usage "option '--json' works only with list"
+  case "${1:-}" in
+  apply) network_revamped_apply ;;
+  status) network_revamped_status_command "${2:-}" ;;
+  popup) network_revamped_popup ;;
+  daemon) network_revamped_daemon_command ;;
+  *)
+    network_revamped_interface
+    revamped_cli_start "${network_revamped_run_theme}"
+    network_revamped_dispatch "$@"
+    ;;
+  esac
+}
+
+network_revamped_main "$@"

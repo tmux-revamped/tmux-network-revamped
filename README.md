@@ -4,57 +4,46 @@
 
 <strong>Network throughput in your tmux status bar, without ever blocking the render.</strong>
 
-English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁體中文（香港）](README.zh-HK.md)
+English &nbsp;|&nbsp; [日本語](README.ja.md) &nbsp;|&nbsp; [简体中文](README.zh-Hans.md) &nbsp;|&nbsp; [繁體中文（香港）](README.zh-HK.md)
 
-[![family](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-network-revamped/family.yml?branch=main&style=flat-square&label=family)](https://github.com/tmux-revamped/tmux-network-revamped/actions/workflows/family.yml)
-[![tests](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-network-revamped/tests.yml?branch=main&style=flat-square&label=tests)](https://github.com/tmux-revamped/tmux-network-revamped/actions/workflows/tests.yml)
+[![ci](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-network-revamped/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/tmux-revamped/tmux-network-revamped/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/tmux-revamped/tmux-network-revamped?style=flat-square&label=release)](https://github.com/tmux-revamped/tmux-network-revamped/releases/latest)
 [![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/tmux-revamped/tmux-network-revamped?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/tmux-revamped/tmux-network-revamped)
 [![license](https://img.shields.io/github/license/tmux-revamped/tmux-network-revamped?style=flat-square&label=license)](LICENSE)
 
 <p align="center">
-  <a href="#what-it-does">What it does</a> |
-  <a href="#installation">Installation</a> |
-  <a href="#usage">Usage</a> |
-  <a href="#configuration">Configuration</a> |
-  <a href="#key-bindings">Key bindings</a> |
-  <a href="#how-it-works">How it works</a>
+  <a href="#quick-start"><strong>Quick start</strong></a> &nbsp;|&nbsp;
+  <a href="#usage">Usage</a> &nbsp;|&nbsp;
+  <a href="#how-it-works">How it works</a> &nbsp;|&nbsp;
+  <a href="#screens">Screens</a>
 </p>
 
 </div>
+
+<p align="center">
+  <img src="screens/hero.gif" alt="network-revamped showing the rates and every probe in the status line, opening the detail popup, switching to Nerd Font labels and to the options render mode" width="800">
+</p>
+
+```console
+$ network-revamped refresh
+Refreshed. en0 moves 55.2KB/s down and 18.4KB/s up.
+$ network-revamped status speed
+55.2KB/s 18.4KB/s
+```
 
 **14** placeholders, **2** render modes, macOS and Linux, tmux **3.2** or later.
 
 ---
 
-## What it does
+## Quick start
 
-The plugin shows download and upload rates in the status line, plus the VPN, LAN address, open connections, Wi-Fi signal and network name. Ping latency, the public address and internet reachability are opt-in, because each one makes a network call.
+### Prerequisites
 
-| Placeholder | Output |
-|:------------|:-------|
-| `#{net_download}` | Download rate, such as `1.2MB/s` |
-| `#{net_upload}` | Upload rate, such as `256.0KB/s` |
-| `#{net_speed}` | Download and upload through `@net_revamped_speed_format` |
-| `#{net_fg_color}` | Foreground style for the current traffic tier |
-| `#{net_bg_color}` | Background style for the current traffic tier |
-| `#{net_vpn}` | Active VPN interface, such as `utun3` or `wg0`; empty when none |
-| `#{net_vpn_name}` | VPN connection name from `scutil` on macOS or `nmcli` on Linux |
-| `#{net_ip}` | IPv4 address of the default-route interface |
-| `#{net_connections}` | Number of established connections |
-| `#{net_ping}` | Latency to `8.8.8.8`, opt-in |
-| `#{net_public_ip}` | Public IPv4 address, opt-in |
-| `#{net_wifi}` | Wi-Fi signal strength, such as `-55dBm` |
-| `#{net_ssid}` | Current Wi-Fi network name |
-| `#{net_online}` | `on` or `off` for internet reachability, opt-in |
-
-## Requirements
-
-| Requirement | Version |
-|:------------|:--------|
-| tmux | 3.2 or later |
-| bash | 3.2 or later |
-| curl | any, for `#{net_public_ip}` and `#{net_online}` |
+| Tool | Version | Used for |
+|:-----|:--------|:---------|
+| tmux | 3.2 or later | the family floor, and the popup |
+| curl | optional | `#{net_public_ip}` and `#{net_online}`; without it reachability falls back to ping |
+| gum | optional | the menu, tables and colours of `network-revamped`; without it every command prints plain text |
 
 It runs on Linux and macOS with BSD, GNU or uutils coreutils. Each probe uses a tool the OS ships:
 
@@ -66,11 +55,11 @@ It runs on Linux and macOS with BSD, GNU or uutils coreutils. Each probe uses a 
 | VPN interface | `netstat -rn` | `ip -o link show up` |
 | VPN name | `scutil --nc list` | `nmcli` |
 | Wi-Fi signal and name | `system_profiler SPAirPortDataType` | `/proc/net/wireless`, `iwgetid` or `iw` |
-| Connections | `netstat -an` | `netstat -an` |
+| Connections | `netstat -an` | `netstat -an`, or `ss` |
 
 A missing tool leaves its placeholder empty.
 
-## Installation
+### Install
 
 With [TPM](https://github.com/tmux-plugins/tpm), add the plugin to `~/.tmux.conf` and press `prefix + I`:
 
@@ -90,7 +79,34 @@ run-shell ~/.tmux/plugins/tmux-network-revamped/network-revamped.tmux
 
 Set `status-left` or `status-right` before the plugin loads. The plugin replaces the placeholders it finds there once, at load time.
 
+`make install` in the clone also puts `network-revamped` in `~/.local/bin`, with its man page and completions under `~/.local/share`.
+
+### Verify
+
+```bash
+~/.tmux/plugins/tmux-network-revamped/bin/network-revamped doctor
+```
+
 ## Usage
+
+The plugin shows download and upload rates in the status line, plus the VPN, LAN address, open connections, Wi-Fi signal and network name. Ping latency, the public address and internet reachability are opt-in, because each one makes a network call.
+
+| Placeholder | Output |
+|:------------|:-------|
+| `#{net_download}` | Download rate, such as `1.2MB/s` |
+| `#{net_upload}` | Upload rate, such as `256.0KB/s` |
+| `#{net_speed}` | Download and upload through `@net_revamped_speed_format` |
+| `#{net_fg_color}` | Foreground style for the current traffic tier |
+| `#{net_bg_color}` | Background style for the current traffic tier |
+| `#{net_vpn}` | Active VPN interface, such as `utun3` or `wg0`; empty when none |
+| `#{net_vpn_name}` | VPN connection name from `scutil` on macOS or `nmcli` on Linux |
+| `#{net_ip}` | IPv4 address of the default-route interface |
+| `#{net_connections}` | Number of established connections |
+| `#{net_ping}` | Latency to `8.8.8.8`, opt-in |
+| `#{net_public_ip}` | Public IPv4 address, opt-in |
+| `#{net_wifi}` | Wi-Fi signal strength, such as `-55dBm` |
+| `#{net_ssid}` | Current Wi-Fi network name |
+| `#{net_online}` | `on` or `off` for internet reachability, opt-in |
 
 Put placeholders in the status line:
 
@@ -114,7 +130,7 @@ set -g @net_revamped_online_enabled '1'
 
 ### Labels and widths
 
-`@net_revamped_<metric>_label` prints an icon or word before one metric, only when its value is not empty. `@net_revamped_icons` set to `nerd` labels every metric with a Nerd Font glyph. A metric's own label wins over the set, and an empty label removes it for that metric. The default, `ascii`, adds no labels.
+`@net_revamped_<metric>_label` prints an icon or word before one metric, only when its value is not empty. `@net_revamped_icons` set to `nerd` labels every metric with a Nerd Font glyph. A metric's own label wins over the set. The default, `ascii`, adds no labels.
 
 | Metric | `nerd` glyph |
 |:-------|:-------------|
@@ -155,7 +171,23 @@ The tier styles are empty by default, so `#{net_fg_color}` and `#{net_bg_color}`
 
 Each value goes in a style, such as `set -g @net_revamped_low_fg_color '#[fg=#a6e3a1]'`.
 
+| Command | What it does |
+|:--------|:-------------|
+| `network-revamped apply` | Binds the popup key and fills the placeholders now; the entry point runs it when tmux loads the plugin |
+| `network-revamped list` | Prints every command `apply` would send and changes nothing; `--json` prints one object |
+| `network-revamped status NAME` | Prints one placeholder, such as `speed`, `ip` or `ssid`; the status line runs it |
+| `network-revamped refresh` | Samples the network now and says what moves |
+| `network-revamped card` | Reads everything now and prints one row per reading |
+| `network-revamped popup` | Opens the card in a tmux popup; the popup key runs it |
+| `network-revamped daemon` | Publishes the placeholders on every tick, for the `options` render mode; `apply` starts it |
+| `network-revamped doctor` | One row per dependency: each tool or file a reading comes from, how finely the clock counts, and any key left alone |
+| `network-revamped version` | The version, then the tmux version |
+| `network-revamped help` | The help page; `man network-revamped` documents the same commands and settings |
+| `network-revamped` | On a terminal, a menu |
+
 ## Configuration
+
+Every option is also a command option with dashes, such as `--precision 2`, and an environment variable, such as `NETWORK_REVAMPED_PRECISION`; the command line wins over the environment, and the environment over the tmux option. An empty tmux option means its default. One given to `apply` rides on the popup key and on every status call.
 
 ### Sampling
 
@@ -163,9 +195,9 @@ Each value goes in a style, such as `set -g @net_revamped_low_fg_color '#[fg=#a6
 |:-------|:--------|:--------|
 | `@net_revamped_interface` | empty | Interface to measure; empty uses the default-route interface |
 | `@net_revamped_interval` | `2` | Seconds between rate samples |
-| `@net_revamped_precision` | `1` | Decimal places for rates, `0` to `9`; a rate that rounds to 1000 or more moves up a unit, through GB/s |
+| `@net_revamped_precision` | `1` | Decimal places for rates, `0` to `9`; a rate that rounds to 1000 or more moves up a unit, through TB/s |
 | `@net_revamped_smoothing` | `0` | Weight in percent, `1` to `99`, of the previous rate in a moving average; `0` shows each sample |
-| `@net_revamped_render` | empty | `options` reads published options instead of running `#()` calls |
+| `@net_revamped_render` | `jobs` | `options` reads published options instead of running `#()` calls |
 
 ### Probes
 
@@ -215,31 +247,113 @@ The plugin writes these options itself. Do not set them.
 
 ## Key bindings
 
-The plugin binds no keys.
+| Key | Action | Default |
+|:----|:-------|:--------|
+| `prefix + M-e` | Detail popup with every reading; Enter closes it | Bound |
+
+`@net_revamped_popup_key` names another key, and `off` binds none. The default key is left alone when something else already holds it, and `network-revamped doctor` says so.
+
+<a id="how-it-works"></a>
 
 ## How it works
 
-[`network-revamped.tmux`](network-revamped.tmux) runs once when tmux loads the plugin. It records which metrics `status-left` and `status-right` use in `@net_revamped_published`, then replaces each placeholder with a call to [`src/network.sh`](src/network.sh) or, in `options` mode, with an option read and starts the background process.
+[`network-revamped.tmux`](network-revamped.tmux) runs once when tmux loads the plugin. It records which metrics `status-left` and `status-right` use in `@net_revamped_published`, then replaces each placeholder with a call to [`bin/network-revamped`](bin/network-revamped) or, in `options` mode, with an option read and starts the background process.
 
 In the default mode, each `#()` call returns the cached value at once. When the cache is older than its interval, the call starts a refresh in the background and takes a lock, so only one refresh runs at a time. The rate is the change in the interface byte counters divided by the elapsed milliseconds. The previous counters live in tmux options, so no file is written.
 
 SSID, VPN name, VPN interface and LAN address values have every `#` doubled before they reach the status line, so a network named `#(cmd)` prints as text instead of running.
 
-The parsers for each tool's output live in [`src/lib/network/network.sh`](src/lib/network/network.sh) and the formatting in [`src/lib/network/render.sh`](src/lib/network/render.sh).
+The readers for each tool's output, the sampling and the formatting live in [`lib/network.sh`](lib/network.sh), and the settings table in [`lib/state.sh`](lib/state.sh). A probe runs only for a placeholder the status line uses. The clock counts milliseconds through `date`, or through perl where `date` cannot.
+
+<a id="screens"></a>
+
+## Screens
+
+<details>
+<summary>Every screen, recorded inside a real tmux with <code>make screens</code>, with each key on the status line</summary>
+<br>
+
+<table>
+<tr>
+<td width="50%" valign="top"><img src="screens/speed.png" alt="network-revamped: The rates, coloured by tier, and every probe in the status line"><br><sub>The rates, coloured by tier, and every probe in the status line, from <code>hero.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/popup.png" alt="network-revamped: prefix M-e opens the detail popup"><br><sub><code>prefix M-e</code> opens the detail popup, from <code>hero.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/icons.png" alt="network-revamped: @net_revamped_icons set to nerd labels every metric with a glyph"><br><sub><code>@net_revamped_icons</code> set to <code>nerd</code> labels every metric with a glyph, from <code>hero.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/options.png" alt="network-revamped: In the options render mode each placeholder reads a tmux option"><br><sub>In the <code>options</code> render mode each placeholder reads a tmux option, from <code>hero.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/card.png" alt="network-revamped: card prints every reading"><br><sub><code>card</code> prints every reading, from <code>features.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/precision.png" alt="network-revamped: @net_revamped_precision sets the decimal places of a rate"><br><sub><code>@net_revamped_precision</code> sets the decimal places of a rate, from <code>features.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/format.png" alt="network-revamped: @net_revamped_speed_format shapes the speed"><br><sub><code>@net_revamped_speed_format</code> shapes the speed, from <code>features.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/fixed.png" alt="network-revamped: @net_revamped_fixed_width pads each value to its widest form"><br><sub><code>@net_revamped_fixed_width</code> pads each value to its widest form, from <code>features.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/labels.png" alt="network-revamped: A label of its own before one metric"><br><sub>A label of its own before one metric, from <code>features.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/list.png" alt="network-revamped: list prints every binding"><br><sub><code>list</code> prints every binding, from <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/status.png" alt="network-revamped: status speed prints both rates"><br><sub><code>status speed</code> prints both rates, from <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/doctor.png" alt="network-revamped: doctor"><br><sub><code>doctor</code>, from <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/plain-menu.png" alt="network-revamped: The menu without gum"><br><sub>The menu without gum, from <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/plain-doctor.png" alt="network-revamped: doctor from the menu"><br><sub><code>doctor</code> from the menu, from <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/version.png" alt="network-revamped: The version"><br><sub>The version, from <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/error.png" alt="network-revamped: An unknown command"><br><sub>An unknown command, from <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/accent.png" alt="network-revamped: An accent from NETWORK_REVAMPED_ACCENT"><br><sub>An accent from <code>NETWORK_REVAMPED_ACCENT</code>, from <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/themes.png" alt="network-revamped: The header in six themes"><br><sub>The header in six themes, from <code>themes.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/help.png" alt="network-revamped: The help page"><br><sub>The help page, from <code>help.tape</code></sub></td>
+<td width="50%" valign="top"></td>
+</tr>
+</table>
+
+The recordings run the real plugin and tmux. Small scripts stand in for the network tools, so the rates and addresses on screen are theirs.
+
+</details>
+
+## Portability
+
+The plugin is POSIX `sh`. CI runs every suite on each row below.
+
+| Shell | Status |
+|:------|:-------|
+| `dash`, `/bin/sh` on macOS | Supported |
+| `bash` 3.2 and 5.x, the system's `zsh` and Homebrew's | Supported |
+
+| System | Status |
+|:-------|:-------|
+| macOS | Tahoe on Apple Silicon and Intel, with the tools it ships, Homebrew's GNU tools and Homebrew's uutils |
+| Linux | Ubuntu 26.04 on x86_64 and arm64, with GNU coreutils, uutils and BusyBox |
 
 ## Development
 
-| Command | What it does |
+| Command | What it runs |
 |:--------|:-------------|
-| `make test` | Runs the bats suite |
-| `make lint` | Runs shellcheck on every shell file |
-| `make coverage` | Measures line coverage with kcov on Linux and fails below 95% |
+| `make fmt` | shfmt `-i 2` on every script |
+| `make lint` | shfmt, ShellCheck, mandoc, yamllint and actionlint, at zero findings |
+| `make test` | The bats suites under the system `sh` |
+| `make test-all` | The suites under every installed shell, both builds of bash and zsh on macOS |
+| `make test-linux` | The suites in an Ubuntu container |
+| `make coverage` | bashcov on this Mac and in the Ubuntu container, merged and gated at 100 percent |
+| `make screens` | The screens above, recorded from the real plugin inside tmux with VHS, on macOS |
+| `make install` | The command, its man page and completions under `PREFIX` |
 
-Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+On macOS, `brew bundle` installs every tool these targets call, from the [`Brewfile`](Brewfile).
+
+Commits follow the conventional commit format and go straight to `main`. After a green `ci` run on `main`, `release.yml` runs semantic-release: every `feat` or `fix` since the last tag publishes a release, stamps the version constant and adds the notes to [`CHANGELOG.md`](CHANGELOG.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE), copyright Gustavo Franco.
 
 <!-- family:begin -->
 
