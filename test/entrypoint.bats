@@ -81,9 +81,21 @@ everything() {
   wait_for host_shows $'\xf3\xb0\x96\xa9 Cafe #S \xf3\xb0\x96\xa9 -52dBm end'
 }
 
-@test "entrypoint - a checkout whose path holds a space, a quote and a hash loads, shows the rates and takes its key" {
+@test "entrypoint - a format given in the environment reaches the status job with its percent signs whole" {
   # Arrange
-  local copy="${BATS_TEST_TMPDIR}/it's #1 plug in"
+  tmux set-environment -g NETWORK_REVAMPED_SPEED_FORMAT 'down %s up %s'
+  tmux set-option -g status-right '#{net_speed} end'
+
+  # Act
+  load_plugin
+
+  # Assert
+  wait_for host_shows "down 100.0KB/s up 25.0KB/s end"
+}
+
+@test "entrypoint - a checkout whose path holds a space, a quote, a hash and a percent sign loads, shows the rates and takes its key" {
+  # Arrange
+  local copy="${BATS_TEST_TMPDIR}/it's #1 50% plug in"
   mkdir -p "${copy}"
   cp -R "${ROOT}/bin" "${ROOT}/lib" "${ROOT}/network-revamped.tmux" "${copy}/"
   tmux set-option -g status-right '#{net_speed} end'

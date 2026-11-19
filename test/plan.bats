@@ -321,14 +321,14 @@ wired() {
   [[ -z "${output}" ]]
 }
 
-@test "plan - a path is quoted for a job with each hash doubled, and for a key with none left" {
+@test "plan - a path is quoted for a job with each hash and each percent sign doubled, and for a key with none left" {
   # Arrange
-  local script='network_revamped_job_quote "/a b/it'"'"'s#1"; network_revamped_literal "/a b/it'"'"'s#1"'
+  local script='network_revamped_job_quote "/a b/it'"'"'s#1 50%"; network_revamped_literal "/a b/it'"'"'s#1 50%"'
 
   # Act
   lib_run network "${script}"
 
   # Assert
-  [[ "${lines[0]}" == "'/a b/it'\\''s##1'" ]]
-  [[ "${lines[1]}" == "'/a b/it'\\''s'\"\$(printf '%b' '\\0043')\"'1'" ]]
+  [[ "${lines[0]}" == "'/a b/it'\\''s##1 50%%'" ]]
+  [[ "${lines[1]}" == "'/a b/it'\\''s'\"\$(printf '%b' '\\0043')\"'1 50%'" ]]
 }
