@@ -1,5 +1,42 @@
 # Changelog
 
+# [2.0.0](https://github.com/tmux-revamped/tmux-network-revamped/compare/v1.5.0...v2.0.0) (2026-11-19)
+
+
+* feat!: rewrite the plugin in POSIX sh ([eea2333](https://github.com/tmux-revamped/tmux-network-revamped/commit/eea2333ad7ab597b19d9da1af507d6181bad0456))
+
+
+### Bug Fixes
+
+* double the percent sign in a status job ([92e18e4](https://github.com/tmux-revamped/tmux-network-revamped/commit/92e18e4af9cb3735ff7da704a680ae239c855e6d))
+* fold a table wider than the terminal ([3e6d669](https://github.com/tmux-revamped/tmux-network-revamped/commit/3e6d6694c1fef883024b65275acd4c88995da8f1))
+* read a smoothing weight with leading zeros ([f4bdb59](https://github.com/tmux-revamped/tmux-network-revamped/commit/f4bdb59b14c8e498edd3acd09fed78b3d808fb90))
+* read the environment to the end ([fc090fc](https://github.com/tmux-revamped/tmux-network-revamped/commit/fc090fc9ff32779ad0e271e91c944b781ed6bd52))
+* read the grep of macOS as bsd in doctor ([6ea0fe7](https://github.com/tmux-revamped/tmux-network-revamped/commit/6ea0fe763d078b6567865cbdc5704216387fe9c8))
+* stop a recording that hangs ([c7d93a6](https://github.com/tmux-revamped/tmux-network-revamped/commit/c7d93a6938b42be952a55bdf5f713bfebf4eaa4f))
+
+
+### Features
+
+* add a shared desktop notifier ([af9fa3c](https://github.com/tmux-revamped/tmux-network-revamped/commit/af9fa3c5a7e1dc49430e2d3f5f4ba31cf1fb42be))
+* **family:** accept bot updates in the audit ([def37e4](https://github.com/tmux-revamped/tmux-network-revamped/commit/def37e40920e4b076a9d3db6f39e85d7943024ee))
+* name unknown setting values in doctor ([41e7e1a](https://github.com/tmux-revamped/tmux-network-revamped/commit/41e7e1a57f2d1217646b012ce1bc1c87c4924b67))
+
+
+### BREAKING CHANGES
+
+* src/network.sh is gone, so a status line that calls
+it by hand must call bin/network-revamped status NAME, and loading
+the plugin again rewrites the placeholders. bash is no longer
+needed. prefix M-e is bound to the detail popup unless something
+else holds it; @net_revamped_popup_key set to off binds nothing. A
+tmux option set to nothing now means its default, so a label set
+to nothing keeps its nerd glyph and an online text set to nothing
+prints the default text. The cached
+options of a probe are filled only while its placeholder is in the
+status line. With neither netstat nor ss, #{net_connections} is
+empty instead of 0.
+
 All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
