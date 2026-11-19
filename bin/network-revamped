@@ -440,7 +440,7 @@ network_revamped_check_switch() {
 }
 
 network_revamped_check_numbers() {
-  network_revamped_check_numbers_bad=$(env | awk -F '=' '$1 ~ /^NETWORK_REVAMPED_(INTERVAL|[A-Z_]+_INTERVAL|[A-Z_]+_WIDTH|[A-Z_]+_THRESH)$/ && $1 != "NETWORK_REVAMPED_FIXED_WIDTH" { value = substr($0, length($1) + 2); if (value != "" && value !~ /^[0-9]+$/) { name = tolower(substr($1, 18)); gsub(/_/, "-", name); print name "=" value; exit } }')
+  network_revamped_check_numbers_bad=$(env | awk -F '=' '$1 ~ /^NETWORK_REVAMPED_(INTERVAL|[A-Z_]+_INTERVAL|[A-Z_]+_WIDTH|[A-Z_]+_THRESH)$/ && $1 != "NETWORK_REVAMPED_FIXED_WIDTH" { value = substr($0, length($1) + 2); if (value != "" && value !~ /^[0-9]+$/) { name = tolower(substr($1, 18)); gsub(/_/, "-", name); if (bad == "") { bad = name "=" value } } } END { if (bad != "") { print bad } }')
   [ -z "${network_revamped_check_numbers_bad}" ] || network_revamped_bad "--${network_revamped_check_numbers_bad%%=*} must be a whole number, got: ${network_revamped_check_numbers_bad#*=}"
 }
 

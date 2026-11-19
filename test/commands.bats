@@ -284,6 +284,30 @@ everything() {
   [[ "${output}" == "network-revamped: unknown command '--interval'. run 'network-revamped help' for usage." ]]
 }
 
+@test "commands - a bad number is reported alone, since the reader of the environment reads it to the end" {
+  # Arrange
+  mkdir -p "${BATS_TEST_TMPDIR}/stubs"
+  cat >"${BATS_TEST_TMPDIR}/stubs/env" <<'STUB'
+#!/bin/sh
+{ set +x; } 2>/dev/null
+trap '' PIPE
+printf 'NETWORK_REVAMPED_INTERVAL=soon\n'
+count=0
+while [ "${count}" -lt 4000 ]; do
+  printf 'FILLER_%s=%0100d\n' "${count}" 0 || exit 1
+  count=$((count + 1))
+done
+STUB
+  chmod +x "${BATS_TEST_TMPDIR}/stubs/env"
+
+  # Act
+  tool status speed
+
+  # Assert
+  [[ "${status}" -eq 1 ]]
+  [[ "${output}" == "network-revamped: --interval must be a whole number, got: soon" ]]
+}
+
 @test "commands - a number is checked before anything runs, whichever setting carries it" {
   # Arrange
   tool --interval soon status speed
