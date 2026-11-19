@@ -494,3 +494,15 @@ STUB
   [[ "${status}" -eq 0 ]]
   [[ "${output}" =~ clock\ +ok\ +date\ counts\ nanoseconds,\ so\ a\ rate\ is\ exact\ to\ the\ millisecond ]]
 }
+
+@test "commands - doctor names a tmux option whose value it does not know" {
+  # Arrange
+  option smoothing 150
+
+  # Act
+  tool doctor
+
+  # Assert
+  run grep '^settings' <<<"${output}"
+  [[ "${output}" == "settings           warn     unknown values: smoothing=150" ]]
+}

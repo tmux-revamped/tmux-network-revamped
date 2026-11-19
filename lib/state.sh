@@ -202,3 +202,35 @@ NETWORK_REVAMPED_NATURAL=0
 NETWORK_REVAMPED_CARD=''
 REVAMPED_CACHE_PREFIX=net_revamped
 REVAMPED_LOG_NS=network-revamped
+NETWORK_REVAMPED_KINDS='interval	number
+vpn_interval	number
+vpn_name_interval	number
+ip_interval	number
+connections_interval	number
+wifi_interval	number
+ssid_interval	number
+online_interval	number
+ping_interval	number
+public_ip_interval	number
+download_width	number
+upload_width	number
+speed_width	number
+vpn_width	number
+vpn_name_width	number
+ip_width	number
+wifi_width	number
+ssid_width	number
+connections_width	number
+ping_width	number
+public_ip_width	number
+online_width	number
+medium_thresh	number
+high_thresh	number
+precision	0 1 2 3 4 5 6 7 8 9
+smoothing	number 0 99
+render	jobs options
+icons	ascii nerd
+fixed_width	on off
+ping_enabled	1 0
+public_ip_enabled	1 0
+online_enabled	1 0'

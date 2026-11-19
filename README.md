@@ -187,7 +187,7 @@ Each value goes in a style, such as `set -g @net_revamped_low_fg_color '#[fg=#a6
 
 ## Configuration
 
-Every option is also a command option with dashes, such as `--precision 2`, and an environment variable, such as `NETWORK_REVAMPED_PRECISION`; the command line wins over the environment, and the environment over the tmux option. An empty tmux option means its default. One given to `apply` rides on the popup key and on every status call.
+Every option is also a command option with dashes, such as `--precision 2`, and an environment variable, such as `NETWORK_REVAMPED_PRECISION`; the command line wins over the environment, and the environment over the tmux option. An empty tmux option means its default. `doctor` names any setting that holds a value the plugin does not know. One given to `apply` rides on the popup key and on every status call.
 
 ### Sampling
 

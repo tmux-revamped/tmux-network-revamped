@@ -187,7 +187,7 @@ set -g @net_revamped_fixed_width 'on'
 
 ## 設定
 
-每個選項亦可寫成帶連字號的命令選項，例如 `--precision 2`，或環境變數，例如 `NETWORK_REVAMPED_PRECISION`；命令列優先於環境變數，環境變數優先於 tmux 選項。空的 tmux 選項表示使用預設值。傳給 `apply` 的選項會隨彈出視窗的按鍵和每次狀態呼叫一同生效。
+每個選項亦可寫成帶連字號的命令選項，例如 `--precision 2`，或環境變數，例如 `NETWORK_REVAMPED_PRECISION`；命令列優先於環境變數，環境變數優先於 tmux 選項。空的 tmux 選項表示使用預設值。`doctor` 會指出數值無法識別的設定。傳給 `apply` 的選項會隨彈出視窗的按鍵和每次狀態呼叫一同生效。
 
 ### 取樣
 

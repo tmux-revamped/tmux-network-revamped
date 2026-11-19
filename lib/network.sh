@@ -48,10 +48,14 @@ network_revamped_resolve() {
   '
 }
 
+network_revamped_setting_rows() {
+  network_revamped_setting_rows_format=$(network_revamped_format)
+  network_revamped_setting_rows_live=$(tmux display-message -p "${network_revamped_setting_rows_format}" 2>/dev/null) || network_revamped_setting_rows_live=""
+  network_revamped_resolve "${network_revamped_setting_rows_live}"
+}
+
 network_revamped_load() {
-  network_revamped_load_format=$(network_revamped_format)
-  network_revamped_load_live=$(tmux display-message -p "${network_revamped_load_format}" 2>/dev/null) || network_revamped_load_live=""
-  network_revamped_load_values=$(network_revamped_resolve "${network_revamped_load_live}")
+  network_revamped_load_values=$(network_revamped_setting_rows)
   while IFS='	' read -r network_revamped_load_name network_revamped_load_value; do
     IFS= read -r "NETWORK_REVAMPED_S_${network_revamped_load_name}" <<EOF
 ${network_revamped_load_value}

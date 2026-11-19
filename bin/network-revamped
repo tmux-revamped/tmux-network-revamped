@@ -272,6 +272,12 @@ network_revamped_doctor_keys() {
   revamped_doctor_line keys ok "every key it binds is free or its own"
 }
 
+network_revamped_doctor_settings() {
+  network_revamped_doctor_settings_rows=$(network_revamped_setting_rows)
+  # shellcheck disable=SC2154
+  revamped_doctor_settings "${NETWORK_REVAMPED_KINDS}" "${network_revamped_doctor_settings_rows}"
+}
+
 network_revamped_doctor() {
   network_revamped_plan
   revamped_doctor_tmux
@@ -283,6 +289,7 @@ network_revamped_doctor() {
   network_revamped_doctor_source ping "measures the latency when @net_revamped_ping_enabled is 1" "without it the latency stays empty"
   network_revamped_doctor_source curl "fetches the public address and tests reachability when their options are 1" "without it the public address stays empty and reachability falls back to ping"
   network_revamped_doctor_clock
+  network_revamped_doctor_settings
   network_revamped_doctor_keys
   revamped_doctor_gum
   revamped_doctor_core_tools awk sed tr date cat
