@@ -34,6 +34,17 @@ wired() {
   [[ "${output}" == "[100000][0][0][0][0][0]" ]]
 }
 
+@test "network - a smoothing weight written with leading zeros is read as a decimal number" {
+  # Arrange
+  local script='for weight in 05 08 050 00 0100; do NETWORK_REVAMPED_S_smoothing="${weight}"; network_revamped_smooth 3000 1000; printf "[%s]" "${NETWORK_REVAMPED_SMOOTH}"; done'
+
+  # Act
+  lib_run network "${script}"
+
+  # Assert
+  [[ "${output}" == "[2900][2840][2000][3000][3000]" ]]
+}
+
 @test "network - smoothing keeps its percent of the previous rate, and zero, a hundred, junk or no previous rate keep the sample" {
   # Arrange
   local script='for weight in 50 25 0 100 x; do NETWORK_REVAMPED_S_smoothing="${weight}"; network_revamped_smooth 3000 1000; printf "[%s]" "${NETWORK_REVAMPED_SMOOTH}"; done; NETWORK_REVAMPED_S_smoothing=50; network_revamped_smooth 3000 ""; printf "[%s]" "${NETWORK_REVAMPED_SMOOTH}"'

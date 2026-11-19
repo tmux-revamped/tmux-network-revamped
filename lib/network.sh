@@ -361,8 +361,12 @@ network_revamped_rate() {
 network_revamped_smooth() {
   NETWORK_REVAMPED_SMOOTH="$1"
   revamped_cache_is_number "$2" || return 0
-  case "${NETWORK_REVAMPED_S_smoothing}" in
-  [1-9] | [1-9][0-9]) NETWORK_REVAMPED_SMOOTH=$((($2 * NETWORK_REVAMPED_S_smoothing + $1 * (100 - NETWORK_REVAMPED_S_smoothing)) / 100)) ;;
+  network_revamped_smooth_weight="${NETWORK_REVAMPED_S_smoothing}"
+  while [ "${#network_revamped_smooth_weight}" -gt 1 ] && [ "${network_revamped_smooth_weight#0}" != "${network_revamped_smooth_weight}" ]; do
+    network_revamped_smooth_weight="${network_revamped_smooth_weight#0}"
+  done
+  case "${network_revamped_smooth_weight}" in
+  [1-9] | [1-9][0-9]) NETWORK_REVAMPED_SMOOTH=$((($2 * network_revamped_smooth_weight + $1 * (100 - network_revamped_smooth_weight)) / 100)) ;;
   *) return 0 ;;
   esac
 }
