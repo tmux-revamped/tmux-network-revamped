@@ -44,6 +44,22 @@ loaded_with_status() {
   wait_for host_shows "100.0KB/s 25.0KB/s end"
 }
 
+@test "keys - Ctrl-C closes the popup and leaves no error over the pane" {
+  # Arrange
+  loaded_with_status
+  press C-b M-e
+  wait_for host_shows "Press Enter to close."
+
+  # Act
+  press C-c
+
+  # Assert
+  wait_for host_lacks "Press Enter to close."
+  host_lacks "returned"
+  run tmux display-message -p -t test '#{pane_in_mode}'
+  [[ "${output}" == "0" ]]
+}
+
 @test "keys - a key the person names opens the popup, and the default one then does nothing" {
   # Arrange
   setting popup_key F8
